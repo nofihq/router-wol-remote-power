@@ -244,6 +244,8 @@ docs/
                                    Generic Linux suspend debugging notes
   os-support.md                   Linux, Windows, macOS, and distro notes
   router-support.md               Router and relay compatibility
+  tailscale.md                    Tailscale/private-network setup
+  rustdesk.md                     RustDesk unattended access setup
   setup.md                        End-to-end setup guide
 ```
 

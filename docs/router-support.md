@@ -42,6 +42,10 @@ Good fit when the model supports:
 
 The included `router/S99wake-api.example` is written for this style of setup.
 
+USB storage is usually part of this path because Entware and `/opt` are commonly
+stored on USB-backed persistent storage on ASUSWRT-Merlin. USB is not a
+project-wide requirement; it is a Merlin/Entware persistence detail.
+
 ### OpenWrt
 
 Good fit when packages are available for:

@@ -16,6 +16,11 @@ on it remotely.
 Before editing files, collect the values listed in
 [Configuration Values](configuration-values.md).
 
+For Tailscale and RustDesk app setup, see:
+
+- [Tailscale Setup](tailscale.md)
+- [RustDesk Notes](rustdesk.md)
+
 ## 0. Workflow Summary
 
 You will end up with:
@@ -90,6 +95,8 @@ tailscale ip -4
 
 Install RustDesk and confirm unattended access works locally before depending
 on it remotely.
+
+Use [RustDesk Notes](rustdesk.md) for the PC and iPhone setup steps.
 
 Clone this repository on the PC:
 
@@ -232,6 +239,14 @@ are the same: private reachability, persistent storage, a WOL command, and no
 WAN port forwarding.
 
 ### ASUSWRT-Merlin Checklist
+
+ASUSWRT-Merlin is not required for this project. It is one router firmware that
+can work because it supports user scripts and Entware on supported models.
+
+USB storage is only needed for router setups that need persistent storage for
+Entware, Python, Tailscale, or the wake API files. If your relay is OpenWrt,
+pfSense/OPNsense, NAS, Home Assistant, Raspberry Pi, or another Linux box with
+normal persistent storage, this USB step does not apply.
 
 In the router web UI:
 

@@ -17,6 +17,8 @@ the setup guide with your own values.
 | `<TOKEN>` | Strong random bearer token | Run `openssl rand -base64 32` | iOS shortcuts, PC API, router API |
 | `<ROUTER_SSH_USER>` | SSH username for the router/relay | Router-specific | Copying router files |
 | `<ROUTER_LAN_IP>` | Router's LAN management IP | Router web UI or `ip route` default gateway | Copying router files |
+| RustDesk PC ID | RustDesk's ID for the PC | Open RustDesk on the PC | RustDesk app on phone |
+| RustDesk permanent password | Unattended-access password | Set in RustDesk security settings on the PC | RustDesk app on phone |
 
 ## Recommended Values
 
@@ -33,6 +35,7 @@ the setup guide with your own values.
 - A token in the URL query string.
 - A token committed to git.
 - WAN port forwarding to either API.
+- RustDesk passwords committed to git.
 
 ## Quick Sanity Check
 

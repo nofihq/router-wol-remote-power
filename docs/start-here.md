@@ -89,6 +89,9 @@ If your router is locked down, use another already-on LAN device instead.
 - Tailscale installed and connected.
 - RustDesk installed if you want remote desktop access.
 
+See [Tailscale Setup](tailscale.md) and [RustDesk Notes](rustdesk.md) for the
+app-specific setup steps.
+
 ## PC Firmware Settings
 
 These settings are changed in BIOS/UEFI, not inside Linux.
@@ -205,6 +208,12 @@ Poor signs:
 
 If the router is not a fit, use another always-on LAN device as the relay.
 
+USB storage on a router is not always required. It is commonly needed on
+ASUSWRT-Merlin/Entware because `/opt` and installed packages usually live on
+USB-backed persistent storage. It is not needed when the relay is a NAS,
+Raspberry Pi, mini PC, Home Assistant box, or router firmware with enough normal
+persistent storage.
+
 ## Values To Collect
 
 Before editing service files, collect everything in
@@ -218,6 +227,9 @@ Most important:
 - PC wired Ethernet MAC address
 - router/relay LAN interface for WOL
 - strong bearer tokens
+
+Tailscale values come from `tailscale ip -4` on each device or from the
+Tailscale admin/device UI.
 
 ## Build Order
 
