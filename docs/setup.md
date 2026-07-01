@@ -136,14 +136,20 @@ br0
 
 ## 4. Generate Tokens
 
-Use one strong random token for the router API and one for the PC API, or one
-shared token if you accept that tradeoff.
+Use one strong random token for the router API and one different strong random
+token for the PC API.
 
-Example:
+Generate two values and record them privately:
 
 ```bash
 openssl rand -base64 32
+openssl rand -base64 32
 ```
+
+Use the first as `<PC_TOKEN>` and the second as `<ROUTER_TOKEN>`, or label them
+the other way around before continuing. A single shared token can work for a
+personal setup, but the guide uses separate tokens because a leaked router
+token should not automatically authorize PC suspend/shutdown.
 
 Store tokens outside git.
 
@@ -152,7 +158,7 @@ portable option is to store it under that user's home directory:
 
 ```bash
 sudo -u <LINUX_USER> install -d -m 0700 /home/<LINUX_USER>/.config/phone-wol-power
-sudo -u <LINUX_USER> sh -c 'printf "%s\n" "<TOKEN>" > /home/<LINUX_USER>/.config/phone-wol-power/token'
+sudo -u <LINUX_USER> sh -c 'printf "%s\n" "<PC_TOKEN>" > /home/<LINUX_USER>/.config/phone-wol-power/token'
 sudo -u <LINUX_USER> chmod 0600 /home/<LINUX_USER>/.config/phone-wol-power/token
 ```
 
@@ -161,7 +167,7 @@ ASUSWRT-Merlin/Entware setup this may look like:
 
 ```sh
 mkdir -p /opt/share/pc-control
-printf "%s\n" "<TOKEN>" > /opt/share/pc-control/.token
+printf "%s\n" "<ROUTER_TOKEN>" > /opt/share/pc-control/.token
 chmod 0600 /opt/share/pc-control/.token
 ```
 
@@ -227,7 +233,7 @@ is not named `tailscale0`, update the `ExecStartPre` line.
 Test status:
 
 ```bash
-curl -H "Authorization: Bearer <TOKEN>" http://<PC_TAILSCALE_IP>:8081/status
+curl -H "Authorization: Bearer <PC_TOKEN>" http://<PC_TAILSCALE_IP>:8081/status
 ```
 
 ## 6. Router Wake API
@@ -312,15 +318,15 @@ cp /tmp/S99wake-api.example /opt/etc/init.d/S99wake-api
 chmod 0755 /opt/share/pc-control/router_wake.py /opt/etc/init.d/S99wake-api
 ```
 
-Create `/opt/share/pc-control/router.env`:
+Create `/opt/share/pc-control/router.env` with the preferred direct bind first:
 
 ```sh
 cat > /opt/share/pc-control/router.env <<'EOF'
 AUTH_TOKEN_FILE=/opt/share/pc-control/.token
 ROUTER_TAILSCALE_IP=<ROUTER_TAILSCALE_IP>
-ROUTER_LISTEN_IP=0.0.0.0
+ROUTER_LISTEN_IP=<ROUTER_TAILSCALE_IP>
 ROUTER_API_PORT=8080
-ROUTER_ALLOWED_CLIENT_NETS=127.0.0.0/8,::1,100.64.0.0/10,fd7a:115c:a1e0::/48
+ROUTER_ALLOWED_CLIENT_NETS=
 WOL_LAN_INTERFACE=br0
 WOL_TARGET_MAC=<PC_ETHERNET_MAC>
 ETHER_WAKE=<PATH_TO_ETHER_WAKE>
@@ -329,6 +335,16 @@ TAILSCALE_CMD=<PATH_TO_TAILSCALE>
 EOF
 chmod 0600 /opt/share/pc-control/router.env
 ```
+
+If the preferred direct bind does not work on ASUSWRT-Merlin/Tailscale
+userspace, edit only these two lines in `router.env`:
+
+```text
+ROUTER_LISTEN_IP=0.0.0.0
+ROUTER_ALLOWED_CLIENT_NETS=127.0.0.0/8,::1,100.64.0.0/10,fd7a:115c:a1e0::/48
+```
+
+Use the fallback only with the firewall rules below.
 
 Find `<PATH_TO_ETHER_WAKE>` with:
 
@@ -403,7 +419,7 @@ ether-wake -i <LAN_BRIDGE_IFACE> -b <PC_ETHERNET_MAC>
 Test wake while physically present:
 
 ```bash
-curl -H "Authorization: Bearer <TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/wake
+curl -H "Authorization: Bearer <ROUTER_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/wake
 ```
 
 ## 7. iOS Shortcuts
@@ -415,10 +431,13 @@ Create these in Shortcuts with **Get Contents of URL**:
 - `PC OFF`: `GET http://<PC_TAILSCALE_IP>:8081/shutdown`
 - optional `PC STATUS`: `GET http://<PC_TAILSCALE_IP>:8081/status`
 
-Each uses:
+Use these authorization headers:
 
 ```text
-Authorization: Bearer <TOKEN>
+PC ON:      Authorization: Bearer <ROUTER_TOKEN>
+PC SUSPEND: Authorization: Bearer <PC_TOKEN>
+PC OFF:     Authorization: Bearer <PC_TOKEN>
+PC STATUS:  Authorization: Bearer <PC_TOKEN>
 ```
 
 ## 8. RustDesk Unattended Access
@@ -445,15 +464,15 @@ before opening the RustDesk session.
 From a tailnet device:
 
 ```bash
-curl -H "Authorization: Bearer <TOKEN>" http://<PC_TAILSCALE_IP>:8081/status
-curl -H "Authorization: Bearer <TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/wake
+curl -H "Authorization: Bearer <PC_TOKEN>" http://<PC_TAILSCALE_IP>:8081/status
+curl -H "Authorization: Bearer <ROUTER_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/wake
 ```
 
 Only test suspend and shutdown while you have a recovery path:
 
 ```bash
-curl -H "Authorization: Bearer <TOKEN>" http://<PC_TAILSCALE_IP>:8081/suspend
-curl -H "Authorization: Bearer <TOKEN>" http://<PC_TAILSCALE_IP>:8081/shutdown
+curl -H "Authorization: Bearer <PC_TOKEN>" http://<PC_TAILSCALE_IP>:8081/suspend
+curl -H "Authorization: Bearer <PC_TOKEN>" http://<PC_TAILSCALE_IP>:8081/shutdown
 ```
 
 Recommended validation order:

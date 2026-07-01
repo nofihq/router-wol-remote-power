@@ -10,7 +10,7 @@ Use this when the PC is asleep or fully shut down.
 URL: http://<ROUTER_TAILSCALE_IP>:8080/wake
 Method: GET
 Header key: Authorization
-Header value: Bearer <TOKEN>
+Header value: Bearer <ROUTER_TOKEN>
 ```
 
 Expected response:
@@ -27,7 +27,7 @@ Use this when the PC is awake and you want to keep your session state.
 URL: http://<PC_TAILSCALE_IP>:8081/suspend
 Method: GET
 Header key: Authorization
-Header value: Bearer <TOKEN>
+Header value: Bearer <PC_TOKEN>
 ```
 
 Expected response:
@@ -44,7 +44,7 @@ Use this when you are done for a longer period.
 URL: http://<PC_TAILSCALE_IP>:8081/shutdown
 Method: GET
 Header key: Authorization
-Header value: Bearer <TOKEN>
+Header value: Bearer <PC_TOKEN>
 ```
 
 Expected response:
@@ -61,7 +61,7 @@ Optional convenience check.
 URL: http://<PC_TAILSCALE_IP>:8081/status
 Method: GET
 Header key: Authorization
-Header value: Bearer <TOKEN>
+Header value: Bearer <PC_TOKEN>
 ```
 
 Expected response:

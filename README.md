@@ -109,7 +109,7 @@ Create three iOS Shortcuts using **Get Contents of URL**.
 ```text
 Method: GET
 URL: http://<ROUTER_TAILSCALE_IP>:8080/wake
-Header: Authorization: Bearer <TOKEN>
+Header: Authorization: Bearer <ROUTER_TOKEN>
 ```
 
 This talks to the router because the PC may be asleep or fully off.
@@ -119,7 +119,7 @@ This talks to the router because the PC may be asleep or fully off.
 ```text
 Method: GET
 URL: http://<PC_TAILSCALE_IP>:8081/suspend
-Header: Authorization: Bearer <TOKEN>
+Header: Authorization: Bearer <PC_TOKEN>
 ```
 
 This talks to the PC and only works while the PC is awake.
@@ -129,7 +129,7 @@ This talks to the PC and only works while the PC is awake.
 ```text
 Method: GET
 URL: http://<PC_TAILSCALE_IP>:8081/shutdown
-Header: Authorization: Bearer <TOKEN>
+Header: Authorization: Bearer <PC_TOKEN>
 ```
 
 This talks to the PC and only works while the PC is awake.
@@ -139,11 +139,12 @@ Optional status endpoint:
 ```text
 Method: GET
 URL: http://<PC_TAILSCALE_IP>:8081/status
-Header: Authorization: Bearer <TOKEN>
+Header: Authorization: Bearer <PC_TOKEN>
 Expected body: ON
 ```
 
-Do not put tokens in query strings. Do not commit token files.
+Use separate random tokens for the router wake API and the PC power API. Do not
+put tokens in query strings. Do not commit token files.
 
 ## Hardware And Firmware Requirements
 

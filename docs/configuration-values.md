@@ -16,7 +16,8 @@ the setup guide with your own values.
 | `<LAN_BRIDGE_IFACE>` | Router LAN bridge/interface that reaches the PC | Router-specific. Common ASUSWRT-Merlin value: `br0` | Router WOL command |
 | `<PATH_TO_ETHER_WAKE>` | Path to the router WOL command | Run `command -v ether-wake` or find the equivalent WOL tool | Router wake API |
 | `<LINUX_USER>` | Linux user that runs the PC API service | Run `whoami` on the PC, or choose a dedicated service user | systemd service, sudoers, token file path |
-| `<TOKEN>` | Strong random bearer token | Run `openssl rand -base64 32` | iOS shortcuts, PC API, router API |
+| `<PC_TOKEN>` | Strong random bearer token for the PC API | Run `openssl rand -base64 32` | PC suspend/shutdown/status shortcuts and PC API |
+| `<ROUTER_TOKEN>` | Strong random bearer token for the router wake API | Run `openssl rand -base64 32` | PC ON shortcut and router API |
 | `<ROUTER_SSH_USER>` | SSH username for the router | Router-specific | Copying router files |
 | `<ROUTER_LAN_IP>` | Router's LAN management IP | Router web UI or `ip route` default gateway | Copying router files |
 | RustDesk PC ID | RustDesk's ID for the PC | Open RustDesk on the PC | RustDesk app on phone |
@@ -27,8 +28,7 @@ the setup guide with your own values.
 | Placeholder | What it is | Why it helps |
 | --- | --- | --- |
 | Reserved PC LAN IP | DHCP reservation for the PC's wired NIC | Makes LAN troubleshooting easier, though WOL uses the MAC address |
-| Separate router token | Token only for `/wake` | Limits damage if one token leaks |
-| Separate PC token | Token only for `/status`, `/suspend`, `/shutdown` | Limits damage if one token leaks |
+| Shared token | One token for both APIs | Simpler, but a leak authorizes both router wake and PC power actions |
 
 ## Do Not Use
 
