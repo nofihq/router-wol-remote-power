@@ -13,8 +13,8 @@ Build phone buttons for a home Linux PC:
 - RustDesk reconnects after the PC wakes.
 
 The practical point is power savings and convenience. The PC can sleep or stay
-off when unused, while a router or another device that was already powered on
-sends the wake packet.
+off when unused, while the router that was already powered on sends the wake
+packet.
 
 ## Safety Model
 
@@ -24,7 +24,7 @@ VPN/network path.
 Use this shape:
 
 ```text
-iPhone -> Tailscale/private VPN -> router or relay -> WOL packet to PC
+iPhone -> Tailscale/private VPN -> router -> WOL packet to PC
 iPhone -> Tailscale/private VPN -> PC -> suspend/shutdown/status
 ```
 
@@ -62,18 +62,14 @@ Poor fit:
 - PC that cannot wake from shutdown/suspend.
 - PC that freezes when suspending locally.
 
-### Router Or Relay
+### Router
 
-You need one always-on device on the same LAN as the PC. It can be:
+The intended setup uses the home router as the always-on wake relay. That is
+the main energy-efficiency advantage: most homes already leave the router on,
+so the PC can sleep or shut down without adding a Raspberry Pi, NAS, or mini PC
+just to send WOL.
 
-- router
-- NAS
-- Home Assistant box
-- Raspberry Pi
-- mini PC
-- other Linux server
-
-It must be able to:
+The router must be able to:
 
 - stay on while the PC is off
 - send Wake-on-LAN packets to the PC's wired MAC address
@@ -81,7 +77,10 @@ It must be able to:
 - persist files after reboot
 - be reachable through Tailscale/private VPN
 
-If your router is locked down, use another already-on LAN device instead.
+If the router is locked down, use another already-on LAN device as a fallback.
+Examples are a NAS, Home Assistant box, Raspberry Pi, mini PC, or other Linux
+server. That fallback can work, but it is no longer the pure router-as-relay
+design.
 
 ### Phone
 
@@ -179,9 +178,9 @@ The PC should actually sleep and wake by keyboard, mouse, power button, or WOL.
 If it freezes or only blanks the screen, fix suspend before installing remote
 sleep controls.
 
-## Router Or Relay Checks
+## Router Checks
 
-If using a router, log into the router web UI and look for:
+Log into the router web UI and look for:
 
 - firmware name/version
 - SSH access
@@ -206,13 +205,14 @@ Poor signs:
 - No way to run startup scripts.
 - Only way to access it remotely is WAN port forwarding.
 
-If the router is not a fit, use another always-on LAN device as the relay.
+If the router is not a fit, use another already-on LAN device as a fallback
+relay. Do not use WAN port forwarding to make a locked-down router fit.
 
-USB storage on a router is not always required. It is commonly needed on
-ASUSWRT-Merlin/Entware because `/opt` and installed packages usually live on
-USB-backed persistent storage. It is not needed when the relay is a NAS,
-Raspberry Pi, mini PC, Home Assistant box, or router firmware with enough normal
-persistent storage.
+USB storage is not the main idea of the project. It is commonly needed on
+ASUSWRT-Merlin/Entware because `/opt`, Entware packages, Python, Tailscale, and
+the wake API files usually live on USB-backed persistent storage. OpenWrt,
+pfSense/OPNsense, and some other router platforms may have enough normal
+persistent storage and may not need USB.
 
 ## Values To Collect
 
@@ -222,10 +222,10 @@ Before editing service files, collect everything in
 Most important:
 
 - PC Tailscale IP
-- router/relay Tailscale IP
+- router Tailscale IP
 - PC wired Ethernet interface
 - PC wired Ethernet MAC address
-- router/relay LAN interface for WOL
+- router LAN interface for WOL
 - strong bearer tokens
 
 Tailscale values come from `tailscale ip -4` on each device or from the
@@ -238,9 +238,9 @@ Use this order:
 1. Confirm PC firmware WOL settings.
 2. Confirm Linux can suspend locally.
 3. Confirm wired WOL can wake the PC locally.
-4. Confirm the router/relay can send a WOL packet.
+4. Confirm the router can send a WOL packet.
 5. Install the PC API.
-6. Install the router/relay wake API.
+6. Install the router wake API.
 7. Add iOS Shortcuts.
 8. Add RustDesk unattended access.
 9. Add idle suspend only after manual suspend/wake works.

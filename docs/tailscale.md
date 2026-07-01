@@ -1,7 +1,7 @@
 # Tailscale Setup
 
-Tailscale is the private network path. The phone should reach the router/relay
-and PC through Tailscale, not through public WAN port forwarding.
+Tailscale is the private network path. The phone should reach the router and
+PC through Tailscale, not through public WAN port forwarding.
 
 ## Devices To Add
 
@@ -9,10 +9,12 @@ Add these devices to the same tailnet:
 
 - iPhone
 - PC
-- router or relay device
+- router
 
-If the router cannot run Tailscale, use another already-on relay device that
-can run Tailscale and send WOL on the same LAN as the PC.
+If the router cannot run Tailscale or another private VPN endpoint, see
+[Router Support](router-support.md). The fallback is another already-on LAN
+device that can run Tailscale and send WOL on the same LAN as the PC, but the
+intended path is router-first.
 
 ## PC
 
@@ -52,12 +54,12 @@ On the iPhone:
 4. Leave Tailscale connected before running Shortcuts from cellular or outside
    Wi-Fi.
 
-## Router Or Relay
+## Router
 
-The router or relay must have a Tailscale/private IP if the phone will call the
-wake API directly.
+The router must have a Tailscale/private IP if the phone will call the wake API
+directly.
 
-On the router/relay:
+On the router:
 
 ```sh
 tailscale status
@@ -70,7 +72,7 @@ Copy that address into:
 <ROUTER_TAILSCALE_IP>
 ```
 
-The router/relay wake API binds to this address on port `8080`.
+The router wake API binds to this address on port `8080`.
 
 ## Settings You Do Not Need
 
@@ -101,7 +103,7 @@ supports policy-based access controls through ACLs/grants. The exact policy
 syntax depends on how your tailnet is managed, so treat this as the intent:
 
 ```text
-iPhone -> router/relay:8080
+iPhone -> router:8080
 iPhone -> PC:8081
 ```
 
@@ -112,7 +114,7 @@ Do not allow public internet access to these ports.
 | Value | Where it goes |
 | --- | --- |
 | PC Tailscale IPv4 | `<PC_TAILSCALE_IP>` |
-| router/relay Tailscale IPv4 | `<ROUTER_TAILSCALE_IP>` |
+| router Tailscale IPv4 | `<ROUTER_TAILSCALE_IP>` |
 | phone identity/device | Tailscale access-control source if using ACLs/grants |
 
 ## Quick Test

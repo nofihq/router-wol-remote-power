@@ -1,16 +1,16 @@
 # Fit And Tradeoffs
 
 This setup is meant for a home Linux desktop that stays on wired Ethernet and
-has a router, NAS, home server, or other already-on LAN device capable of
-running a small private wake service.
+has a router capable of running a small private wake service and sending WOL on
+the PC's wired LAN.
 
 ## Good Fit
 
 - Linux desktop or workstation at home.
 - Wired Ethernet connected to the same LAN as the router.
-- Router or relay device already stays powered on.
-- Router or relay can run ASUSWRT-Merlin/Entware, OpenWrt, DD-WRT,
-  pfSense/OPNsense, Linux, or another persistent private service.
+- Router already stays powered on.
+- Router can run ASUSWRT-Merlin/Entware, OpenWrt, DD-WRT, pfSense/OPNsense, or
+  another persistent private service.
 - The PC wakes reliably from Ethernet WOL after shutdown and suspend.
 - The PC suspends cleanly with `systemctl suspend`.
 - The user wants phone shortcuts for wake, suspend, and shutdown.
@@ -21,6 +21,7 @@ running a small private wake service.
 - Wi-Fi-only desktop.
 - Laptop that often changes networks or docking state.
 - Router cannot run scripts/packages and cannot send WOL packets.
+- You would need to buy or power a new device only to act as the WOL relay.
 - PC firmware cannot wake from the desired sleep/off state.
 - Local suspend is already unreliable.
 - You need a managed enterprise solution with audit logs, roles, and central
@@ -28,10 +29,15 @@ running a small private wake service.
 
 ## Efficiency
 
-The main efficiency win is using a device that is already on, usually the
-router, as the WOL relay instead of adding a Raspberry Pi, NAS, mini PC, or
-smart plug only to wake the workstation. The workstation can remain suspended
-or fully shut down when it is not being used.
+The main efficiency win is using the router that is already on as the WOL relay
+instead of adding a Raspberry Pi, NAS, mini PC, or smart plug only to wake the
+workstation. The workstation can remain suspended or fully shut down when it is
+not being used.
+
+If a NAS, Home Assistant box, Raspberry Pi, mini PC, or Linux server is already
+running 24/7 for another reason, it can be a fallback relay. It is not the
+preferred path because the router-as-relay design is what avoids another
+always-on device.
 
 ## Safety
 

@@ -24,9 +24,9 @@ This project is designed for private tailnet use, not public internet exposure.
 ## Safe Network Shape
 
 ```text
-iPhone -> Tailscale/private VPN -> router/relay /wake
+iPhone -> Tailscale/private VPN -> router /wake
 iPhone -> Tailscale/private VPN -> PC /status /suspend /shutdown
-router/relay -> local wired LAN -> WOL packet to PC
+router -> local wired LAN -> WOL packet to PC
 ```
 
 Unsafe network shape:

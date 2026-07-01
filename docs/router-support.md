@@ -1,17 +1,22 @@
-# Router And Relay Support
+# Router Support
 
-This project does not require one exact router brand. It requires one
-always-on device on the home LAN that can send a Wake-on-LAN packet and receive
-a private request from your phone.
+This project is router-first. The normal design is to use the home router,
+which is already powered on, as the Wake-on-LAN relay. That is the main
+difference from setups that add a Raspberry Pi, NAS, mini PC, or smart plug
+only for remote power control.
+
+It does not require one exact router brand. It requires router capabilities:
+the router must be on the PC's LAN, send WOL, receive a private request from
+your phone, and keep the wake service running after reboot.
 
 If you do not know whether your router is a fit, check the router web UI first.
 Look for SSH access, custom/startup scripts, package support, Wake-on-LAN, and
 VPN/Tailscale support. If those do not exist, the router is probably not the
-right relay.
+right fit for the router-first setup.
 
 ## Required Capabilities
 
-The router or relay device must be able to:
+The router must be able to:
 
 - stay powered on while the PC is off or suspended
 - reach the PC's wired Ethernet LAN/VLAN
@@ -23,8 +28,8 @@ The router or relay device must be able to:
   network path
 - avoid public WAN port forwarding
 
-If any of those are missing, this repo can still be adapted, but the documented
-setup will not work as written.
+If any of those are missing, the documented router setup will not work as
+written. Use a fallback relay only if the router is locked down.
 
 ## Good Fits
 
@@ -75,11 +80,15 @@ Can work when you implement the wake endpoint with the platform's service model
 and keep it private. These platforms often have strong firewall controls, so
 only allow the API from the VPN/private interface.
 
-### NAS, Home Assistant, Raspberry Pi, Mini PC, Or Linux Server
+## Fallback Relays
 
-These can all act as the relay if they are already on and on the same LAN as
-the PC. This is practical if the device is already running. It is less
-energy-efficient if you add a new always-on device only for WOL.
+NAS, Home Assistant, Raspberry Pi, mini PC, and Linux servers can all send WOL
+if they are already on and on the same LAN as the PC. Treat these as fallback
+relays when the router cannot run the wake API.
+
+This fallback is practical if the device already runs 24/7 for another reason.
+It is less energy-efficient if you buy or power another device only for WOL,
+because it loses the router-as-already-on advantage.
 
 ## Poor Fits
 
@@ -90,13 +99,15 @@ energy-efficient if you add a new always-on device only for WOL.
 - Routers that can only expose the service through public WAN forwarding.
 
 In those cases, keep the router as-is and use another already-on LAN device as
-the relay.
+a fallback relay.
 
 ## Quick Decision
 
-Use the router if it can run a private persistent service and send WOL.
+Use the router if it can run a private persistent service and send WOL. That is
+the intended setup.
 
-Use another already-on LAN device if the router is locked down.
+Use another already-on LAN device only if the router is locked down or cannot
+send WOL.
 
 Do not use this design with public port forwarding.
 
@@ -108,9 +119,9 @@ Do not use this design with public port forwarding.
 | OpenWrt router | Good fit with adaptation | Use OpenWrt packages and service management. |
 | DD-WRT router | Possible | Depends heavily on model storage, startup scripts, and WOL tools. |
 | pfSense/OPNsense box | Possible | Implement service using platform tooling and firewall rules. |
-| NAS already on 24/7 | Good relay | Use Linux/service equivalent if it can send WOL. |
-| Home Assistant box already on 24/7 | Good relay | Use an equivalent private endpoint or automation. |
-| Raspberry Pi/mini PC already on | Good relay | Works, but less ideal if bought only for this. |
+| NAS already on 24/7 | Fallback relay | Use Linux/service equivalent if the router cannot run the wake API. |
+| Home Assistant box already on 24/7 | Fallback relay | Use an equivalent private endpoint or automation. |
+| Raspberry Pi/mini PC already on | Fallback relay | Works, but less ideal if bought only for this. |
 | Stock ISP router | Usually poor fit | Often lacks SSH, packages, scripts, and persistent services. |
 | Locked-down mesh router | Usually poor fit | Often cannot run custom services or send WOL. |
 | Router on another VLAN from PC | Poor fit until network is changed | WOL broadcast must reach the wired NIC. |

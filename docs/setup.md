@@ -54,7 +54,7 @@ Common PC firmware setting names:
 - Disable if it blocks wake: `ErP`, `ErP Ready`, `Deep Sleep`, or similar.
 - Set boot order so the Linux install that runs this service boots first.
 
-Router or relay device:
+Router:
 
 - Already powered on when the PC is off or suspended.
 - Can run a small HTTP service or equivalent private command endpoint.
@@ -65,7 +65,8 @@ Router or relay device:
 - Can run Tailscale or otherwise expose the wake API only through a private
   VPN/network path.
 
-See [Router Support](router-support.md) for vendor-neutral router examples.
+See [Router Support](router-support.md) for router platforms that can work and
+fallback options if the router is locked down.
 
 Phone:
 
@@ -229,24 +230,29 @@ Test status:
 curl -H "Authorization: Bearer <TOKEN>" http://<PC_TAILSCALE_IP>:8081/status
 ```
 
-## 6. Router Or Relay API
+## 6. Router Wake API
 
 This section shows an ASUSWRT-Merlin/Entware-style install because that is a
-common router path. For OpenWrt, DD-WRT, pfSense/OPNsense, NAS, Home Assistant,
-or another Linux relay, use the same environment variables and run
-`router/router_wake.py` under that platform's service manager. The requirements
-are the same: private reachability, persistent storage, a WOL command, and no
-WAN port forwarding.
+common router path. For OpenWrt, DD-WRT, or pfSense/OPNsense, keep the same
+shape but use that router platform's package manager, firewall, and service
+manager.
+
+If the router cannot run the wake API, a NAS, Home Assistant box, Raspberry Pi,
+mini PC, or Linux server that is already on can run the same wake API as a
+fallback relay. That works, but it is not the main router-as-already-on design.
+The requirements are the same: private reachability, persistent storage, a WOL
+command, and no WAN port forwarding.
 
 ### ASUSWRT-Merlin Checklist
 
-ASUSWRT-Merlin is not required for this project. It is one router firmware that
-can work because it supports user scripts and Entware on supported models.
+ASUSWRT-Merlin is one documented router path because it supports user scripts
+and Entware on supported models.
 
-USB storage is only needed for router setups that need persistent storage for
-Entware, Python, Tailscale, or the wake API files. If your relay is OpenWrt,
-pfSense/OPNsense, NAS, Home Assistant, Raspberry Pi, or another Linux box with
-normal persistent storage, this USB step does not apply.
+USB storage is commonly needed on ASUSWRT-Merlin/Entware because Entware,
+Python, Tailscale, `/opt`, and the wake API files usually need persistent
+storage that survives router reboot. On router platforms with normal persistent
+storage, such as many OpenWrt or pfSense/OPNsense installs, this USB step may
+not apply.
 
 In the router web UI:
 

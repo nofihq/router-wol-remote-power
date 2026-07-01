@@ -3,7 +3,7 @@
 This repository ships a Linux implementation of a broader architecture:
 
 ```text
-phone -> private network -> always-on LAN relay -> WOL target
+phone -> private network -> router wake API -> WOL target
 phone -> private network -> awake target -> suspend/shutdown API
 ```
 
@@ -74,6 +74,9 @@ Wake-on-LAN support on Macs varies by model, network adapter, power state, and
 The router wake API is mostly target-OS independent. It only needs to send a
 valid WOL magic packet to the target machine's wired NIC on the LAN.
 
-ASUSWRT-Merlin with Entware is the documented path. OpenWrt, DD-WRT, pfSense,
-OPNsense, a NAS, or another always-on LAN device can provide the same role if
-it can run a small private service and send WOL packets.
+ASUSWRT-Merlin with Entware is the documented router path. OpenWrt, DD-WRT,
+and pfSense/OPNsense can provide the same router role if they can run a small
+private service and send WOL packets.
+
+NAS, Home Assistant, Raspberry Pi, mini PC, and Linux servers are fallback
+relay options when the router cannot run the wake API.

@@ -27,7 +27,7 @@ through RustDesk.
 | Goal | How this repo does it |
 | --- | --- |
 | Save power | PC can stay suspended or shut down when unused. |
-| Avoid another always-on box | Router or another already-on LAN device sends WOL. |
+| Avoid another always-on box | The home router, which is already on, sends WOL. |
 | Easy phone control | iOS Shortcuts call `/wake`, `/suspend`, `/shutdown`, and `/status`. |
 | Avoid public exposure | APIs bind to Tailscale/private IPs; no WAN port forwarding. |
 | Keep remote desktop usable | RustDesk reconnects after the PC wakes. |
@@ -57,8 +57,10 @@ That guide explains:
   instead of opening a public WAN port.
 - **Normal OS power actions:** suspend and shutdown go through Linux/systemd,
   not a smart plug cutting power.
-- A router is already on in most home networks.
-- No extra always-on relay device is required.
+- A router is already on in most home networks, so the wake relay does not add
+  another 24/7 device.
+- Raspberry Pi, NAS, mini PC, or Home Assistant relays are fallback options
+  only when the router cannot run this kind of private wake service.
 - Wake works through Ethernet WOL, which is more reliable than Wi-Fi wake.
 
 It is still hardware-dependent:
@@ -80,7 +82,7 @@ hardware and security discussion.
 flowchart LR
   phone["iPhone Shortcuts"]
   tailscale["Tailscale tailnet"]
-  router["Router API\n/already-on LAN device"]
+  router["Router wake API"]
   pcapi["PC Power API"]
   pc["Linux workstation"]
   rustdesk["RustDesk client"]
@@ -146,7 +148,8 @@ Required:
 
 - Ethernet-connected PC.
 - Motherboard/UEFI support for Wake-on-LAN from S5/off and/or S3/suspend.
-- Router or already-on LAN device that can send a magic packet on the LAN.
+- Router that can send a magic packet on the LAN and run a private wake
+  service.
 - Private network path such as Tailscale between phone, router, and PC.
 - Boot order configured so wake returns to the OS running the PC API.
 
@@ -157,25 +160,30 @@ Required:
 | PC hardware | Wired Ethernet and WOL-capable motherboard/NIC | PC BIOS/UEFI and Linux `ethtool` |
 | PC firmware | WOL/PCIe wake enabled, ErP/deep sleep disabled if needed | BIOS/UEFI power/APM/PCIe menus |
 | Linux | systemd suspend works locally | `systemctl suspend` while physically present |
-| Router/relay | Already-on device that can send WOL and run a private service | Router web UI, SSH shell, package/startup-script support |
-| Private network | Phone can reach router/relay and PC privately | Tailscale or another VPN/private network |
+| Router | Already-on home router that can send WOL and run a private service | Router web UI, SSH shell, package/startup-script support |
+| Private network | Phone can reach the router and PC privately | Tailscale or another VPN/private network |
 | Phone control | iOS Shortcuts can call private URLs with headers | Shortcuts app |
 | Remote desktop | RustDesk unattended access configured privately | RustDesk security settings |
 | Safety | No WAN port forwarding, strong tokens, private bind addresses | Router firewall, Tailscale ACLs, token files |
 
-Router fit is capability-based, not brand-based. The router or relay device
-must be able to run a small private service, persist files, start that service
-after reboot, and send WOL on the PC's wired LAN. See
-[docs/router-support.md](docs/router-support.md).
+Router fit is capability-based, not brand-based. The intended setup uses the
+router as the always-on relay. The router must be able to run a small private
+service, persist files, start that service after reboot, and send WOL on the
+PC's wired LAN. See [docs/router-support.md](docs/router-support.md).
 
-Examples that can work with the right setup:
+Router platforms that can work with the right setup:
 
 - ASUSWRT-Merlin with Entware.
 - OpenWrt with packages for Python/Tailscale/WOL.
 - DD-WRT if persistent scripts and WOL are available.
 - pfSense/OPNsense with an equivalent private service.
+
+Fallbacks when the router is locked down:
+
 - NAS, Home Assistant box, Raspberry Pi, mini PC, or any Linux box already on
-  the LAN.
+  the LAN can run the wake API instead. This works, but it is not the main
+  energy-efficiency advantage unless that device was already on for other
+  reasons.
 
 Common blockers:
 
@@ -243,7 +251,7 @@ docs/
   linux-suspend-troubleshooting.md
                                    Generic Linux suspend debugging notes
   os-support.md                   Linux, Windows, macOS, and distro notes
-  router-support.md               Router and relay compatibility
+  router-support.md               Router-first compatibility and fallbacks
   tailscale.md                    Tailscale/private-network setup
   rustdesk.md                     RustDesk unattended access setup
   setup.md                        End-to-end setup guide

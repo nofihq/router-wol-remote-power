@@ -79,9 +79,9 @@ Linux suspend can fail because of:
 Use `systemctl suspend` for real suspend. Avoid direct `/sys/power/state` unless
 you know your GPU driver supports that path.
 
-## Router Or Relay Compatibility
+## Router Compatibility
 
-Works best with routers or already-on relay devices that provide:
+The intended setup works best with routers that provide:
 
 - persistent storage or scripts
 - a package system or Python runtime
@@ -96,8 +96,6 @@ Good fits:
 - DD-WRT routers if they can run a persistent private service and send WOL.
 - pfSense/OPNsense boxes if the wake service is implemented with their service
   model and kept private.
-- A NAS, home server, or small Linux box can replace the router relay, but that
-  loses the "no extra always-on relay" advantage if it was not already on.
 
 Poor fits:
 
@@ -110,8 +108,13 @@ For ASUSWRT-Merlin, the important router-side settings are SSH access for
 setup, JFFS custom scripts enabled, USB-backed persistent storage for Entware,
 and a private Tailscale/private-network path to the API.
 
-See [Router And Relay Support](router-support.md) for a fuller vendor-neutral
-compatibility guide.
+If the router is locked down, a NAS, home server, Home Assistant box, Raspberry
+Pi, or mini PC that is already on can replace the router wake API as a fallback
+relay. That fallback works, but it loses the "no extra always-on device" benefit
+if the device was not already running.
+
+See [Router Support](router-support.md) for a fuller vendor-neutral
+compatibility guide and fallback table.
 
 ## Operating Systems
 
