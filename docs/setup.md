@@ -1,7 +1,11 @@
 # End-To-End Setup Guide
 
-This is a template-level guide. Replace placeholder values with your own
-tailnet IPs, LAN interface names, MAC addresses, and token paths.
+This is the implementation guide. If you are not sure what Wake-on-LAN,
+Tailscale, router scripts, or Linux services are, read
+[Start Here](start-here.md) first.
+
+Replace placeholder values with your own tailnet IPs, LAN interface names, MAC
+addresses, and token paths.
 
 If your hardware matches the compatibility checklist and every placeholder is
 replaced correctly, these steps should reproduce the workflow. Hardware,

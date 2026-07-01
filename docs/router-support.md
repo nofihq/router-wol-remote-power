@@ -4,6 +4,11 @@ This project does not require one exact router brand. It requires one
 always-on device on the home LAN that can send a Wake-on-LAN packet and receive
 a private request from your phone.
 
+If you do not know whether your router is a fit, check the router web UI first.
+Look for SSH access, custom/startup scripts, package support, Wake-on-LAN, and
+VPN/Tailscale support. If those do not exist, the router is probably not the
+right relay.
+
 ## Required Capabilities
 
 The router or relay device must be able to:

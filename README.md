@@ -33,6 +33,20 @@ through RustDesk.
 | Keep remote desktop usable | RustDesk reconnects after the PC wakes. |
 | Avoid unsafe power cuts | Linux handles suspend/shutdown normally through systemd. |
 
+## Start Here
+
+If you are not already familiar with Wake-on-LAN, router firmware, Linux
+services, or Tailscale, start with [docs/start-here.md](docs/start-here.md).
+
+That guide explains:
+
+- what hardware you need
+- where to check BIOS/UEFI settings
+- how to tell whether your router can work
+- what safety settings matter
+- what values to collect before editing files
+- the order to test wake, suspend, shutdown, and RustDesk
+
 ## Why This Is Practical
 
 - **Energy efficient:** the PC can stay suspended or fully off, while the router
@@ -136,6 +150,19 @@ Required:
 - Private network path such as Tailscale between phone, router, and PC.
 - Boot order configured so wake returns to the OS running the PC API.
 
+## Prerequisites, Setup, Safety
+
+| Area | You need | Where to configure/check |
+| --- | --- | --- |
+| PC hardware | Wired Ethernet and WOL-capable motherboard/NIC | PC BIOS/UEFI and Linux `ethtool` |
+| PC firmware | WOL/PCIe wake enabled, ErP/deep sleep disabled if needed | BIOS/UEFI power/APM/PCIe menus |
+| Linux | systemd suspend works locally | `systemctl suspend` while physically present |
+| Router/relay | Already-on device that can send WOL and run a private service | Router web UI, SSH shell, package/startup-script support |
+| Private network | Phone can reach router/relay and PC privately | Tailscale or another VPN/private network |
+| Phone control | iOS Shortcuts can call private URLs with headers | Shortcuts app |
+| Remote desktop | RustDesk unattended access configured privately | RustDesk security settings |
+| Safety | No WAN port forwarding, strong tokens, private bind addresses | Router firewall, Tailscale ACLs, token files |
+
 Router fit is capability-based, not brand-based. The router or relay device
 must be able to run a small private service, persist files, start that service
 after reboot, and send WOL on the PC's wired LAN. See
@@ -209,6 +236,7 @@ scripts/
   configure_idle_suspend.sh       GNOME 2-hour idle suspend helper
   suspend_via_systemd.sh          Local suspend wrapper
 docs/
+  start-here.md                   Beginner hardware, settings, and safety guide
   fit-and-tradeoffs.md            When this setup is a good fit
   configuration-values.md         All placeholders and where to find them
   hardware-compatibility.md       Firmware, WOL, and suspend constraints

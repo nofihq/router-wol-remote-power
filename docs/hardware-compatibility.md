@@ -3,6 +3,9 @@
 Wake and suspend are hardware-dependent. Test locally before depending on this
 while traveling.
 
+For a beginner-oriented checklist of where to change these settings, start with
+[Start Here](start-here.md).
+
 ## Wake Requirements
 
 - Wired Ethernet is strongly preferred.
