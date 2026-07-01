@@ -21,6 +21,20 @@ This project is designed for private tailnet use, not public internet exposure.
   interface.
 - Use separate tokens for `/wake` and `/shutdown`/`/suspend` when practical.
 
+## Safe Network Shape
+
+```text
+iPhone -> Tailscale/private VPN -> router/relay /wake
+iPhone -> Tailscale/private VPN -> PC /status /suspend /shutdown
+router/relay -> local wired LAN -> WOL packet to PC
+```
+
+Unsafe network shape:
+
+```text
+public internet -> router WAN port forward -> power API
+```
+
 ## Threats To Care About
 
 - A leaked bearer token lets an attacker wake, suspend, or shut down the PC if

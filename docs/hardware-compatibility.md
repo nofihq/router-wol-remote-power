@@ -76,9 +76,9 @@ Linux suspend can fail because of:
 Use `systemctl suspend` for real suspend. Avoid direct `/sys/power/state` unless
 you know your GPU driver supports that path.
 
-## Router Compatibility
+## Router Or Relay Compatibility
 
-Works best with routers that provide:
+Works best with routers or already-on relay devices that provide:
 
 - persistent storage or scripts
 - a package system or Python runtime
@@ -106,6 +106,9 @@ Poor fits:
 For ASUSWRT-Merlin, the important router-side settings are SSH access for
 setup, JFFS custom scripts enabled, USB-backed persistent storage for Entware,
 and a private Tailscale/private-network path to the API.
+
+See [Router And Relay Support](router-support.md) for a fuller vendor-neutral
+compatibility guide.
 
 ## Operating Systems
 

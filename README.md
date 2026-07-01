@@ -1,34 +1,51 @@
 # Router WOL Remote Power
 
-Phone-controlled wake, suspend, shutdown, and remote desktop access for a Linux
-workstation without adding another always-on device.
+Energy-efficient phone control for a home Linux workstation: wake it, suspend
+it, shut it down, and reconnect through RustDesk without exposing ports to the
+public internet.
 
 The core idea is simple: use the router you already leave powered on as the
-Wake-on-LAN relay, and use Tailscale plus small authenticated HTTP endpoints for
-phone shortcuts. The workstation can stay off or suspended when you are not
-using it, then wake on demand and reconnect through RustDesk.
+Wake-on-LAN relay. Your phone talks to the router and PC over Tailscale/private
+VPN, then iOS Shortcuts call small authenticated HTTP endpoints. The PC can stay
+off or suspended when you are not using it, then wake on demand and reconnect
+through RustDesk.
 
 ## What This Is
 
 - Wake a powered-off or suspended PC from an iPhone Shortcut.
 - Suspend or shut down an awake PC from an iPhone Shortcut.
-- Keep the PC reachable only over a private tailnet, with no WAN port forwards.
+- Keep the power controls reachable only over a private tailnet/VPN, with no
+  WAN port forwards.
 - Use the router as the always-on LAN device, avoiding a Raspberry Pi/NAS just
-  for WOL relay duty.
+  for WOL relay duty if you do not already run one.
 - Preserve Linux/NVIDIA suspend correctness by using `systemctl suspend`, not
   direct `/sys/power/state` or direct `rtcwake`.
 - Optional 2-hour idle suspend through GNOME power management.
 
-## Why This Setup
+## At A Glance
 
+| Goal | How this repo does it |
+| --- | --- |
+| Save power | PC can stay suspended or shut down when unused. |
+| Avoid another always-on box | Router or another already-on LAN device sends WOL. |
+| Easy phone control | iOS Shortcuts call `/wake`, `/suspend`, `/shutdown`, and `/status`. |
+| Avoid public exposure | APIs bind to Tailscale/private IPs; no WAN port forwarding. |
+| Keep remote desktop usable | RustDesk reconnects after the PC wakes. |
+| Avoid unsafe power cuts | Linux handles suspend/shutdown normally through systemd. |
+
+## Why This Is Practical
+
+- **Energy efficient:** the PC can stay suspended or fully off, while the router
+  that was already powered on handles wake packets.
+- **Easy from the phone:** iOS Shortcuts only need simple `GET` requests with an
+  `Authorization` header.
+- **No port forwarding:** phone access goes through Tailscale/private VPN
+  instead of opening a public WAN port.
+- **Normal OS power actions:** suspend and shutdown go through Linux/systemd,
+  not a smart plug cutting power.
 - A router is already on in most home networks.
 - No extra always-on relay device is required.
-- The high-power machine can spend long periods fully off or in suspend.
 - Wake works through Ethernet WOL, which is more reliable than Wi-Fi wake.
-- No public WAN port forwarding is needed.
-- Tailscale provides the private network path.
-- App endpoints require `Authorization: Bearer <TOKEN>`.
-- Root actions are limited to narrow helper scripts through sudoers.
 
 It is still hardware-dependent:
 
@@ -115,14 +132,23 @@ Required:
 
 - Ethernet-connected PC.
 - Motherboard/UEFI support for Wake-on-LAN from S5/off and/or S3/suspend.
-- Router or always-on LAN device that can send a magic packet on the LAN.
+- Router or already-on LAN device that can send a magic packet on the LAN.
 - Private network path such as Tailscale between phone, router, and PC.
 - Boot order configured so wake returns to the OS running the PC API.
 
-Likely router fit:
+Router fit is capability-based, not brand-based. The router or relay device
+must be able to run a small private service, persist files, start that service
+after reboot, and send WOL on the PC's wired LAN. See
+[docs/router-support.md](docs/router-support.md).
 
-- ASUSWRT-Merlin router with Entware or a similar persistent script mechanism.
-- OpenWrt, DD-WRT, pfSense, OPNsense, a NAS, or a small Linux box can also work.
+Examples that can work with the right setup:
+
+- ASUSWRT-Merlin with Entware.
+- OpenWrt with packages for Python/Tailscale/WOL.
+- DD-WRT if persistent scripts and WOL are available.
+- pfSense/OPNsense with an equivalent private service.
+- NAS, Home Assistant box, Raspberry Pi, mini PC, or any Linux box already on
+  the LAN.
 
 Common blockers:
 
@@ -184,10 +210,12 @@ scripts/
   suspend_via_systemd.sh          Local suspend wrapper
 docs/
   fit-and-tradeoffs.md            When this setup is a good fit
+  configuration-values.md         All placeholders and where to find them
   hardware-compatibility.md       Firmware, WOL, and suspend constraints
   linux-suspend-troubleshooting.md
                                    Generic Linux suspend debugging notes
   os-support.md                   Linux, Windows, macOS, and distro notes
+  router-support.md               Router and relay compatibility
   setup.md                        End-to-end setup guide
 ```
 

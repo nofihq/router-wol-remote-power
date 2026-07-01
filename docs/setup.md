@@ -9,6 +9,9 @@ firmware, router firmware, and Linux suspend behavior can still require local
 adjustment, so validate in the order shown in the test section before relying
 on it remotely.
 
+Before editing files, collect the values listed in
+[Configuration Values](configuration-values.md).
+
 ## 0. Workflow Summary
 
 You will end up with:
@@ -42,13 +45,18 @@ Common PC firmware setting names:
 - Disable if it blocks wake: `ErP`, `ErP Ready`, `Deep Sleep`, or similar.
 - Set boot order so the Linux install that runs this service boots first.
 
-Router:
+Router or relay device:
 
-- Router is always on.
-- Router can run a small HTTP service.
-- Router is on the same LAN broadcast domain as the PC wired NIC.
-- Router can send WOL magic packets, for example with `ether-wake`.
-- Router can run Tailscale or otherwise expose the wake API only privately.
+- Already powered on when the PC is off or suspended.
+- Can run a small HTTP service or equivalent private command endpoint.
+- Can persist files and start that service after reboot.
+- Is on the same LAN broadcast domain/VLAN as the PC wired NIC.
+- Can send WOL magic packets, for example with `ether-wake`, `wakeonlan`, or an
+  equivalent tool.
+- Can run Tailscale or otherwise expose the wake API only through a private
+  VPN/network path.
+
+See [Router Support](router-support.md) for vendor-neutral router examples.
 
 Phone:
 
@@ -210,7 +218,14 @@ Test status:
 curl -H "Authorization: Bearer <TOKEN>" http://<PC_TAILSCALE_IP>:8081/status
 ```
 
-## 6. Router API
+## 6. Router Or Relay API
+
+This section shows an ASUSWRT-Merlin/Entware-style install because that is a
+common router path. For OpenWrt, DD-WRT, pfSense/OPNsense, NAS, Home Assistant,
+or another Linux relay, use the same environment variables and run
+`router/router_wake.py` under that platform's service manager. The requirements
+are the same: private reachability, persistent storage, a WOL command, and no
+WAN port forwarding.
 
 ### ASUSWRT-Merlin Checklist
 

@@ -1,15 +1,16 @@
 # Fit And Tradeoffs
 
 This setup is meant for a home Linux desktop that stays on wired Ethernet and
-has a router capable of running a small private wake service.
+has a router, NAS, home server, or other already-on LAN device capable of
+running a small private wake service.
 
 ## Good Fit
 
 - Linux desktop or workstation at home.
 - Wired Ethernet connected to the same LAN as the router.
-- Router already stays powered on.
-- Router can run ASUSWRT-Merlin/Entware, OpenWrt, DD-WRT, pfSense/OPNsense, or
-  another persistent private service.
+- Router or relay device already stays powered on.
+- Router or relay can run ASUSWRT-Merlin/Entware, OpenWrt, DD-WRT,
+  pfSense/OPNsense, Linux, or another persistent private service.
 - The PC wakes reliably from Ethernet WOL after shutdown and suspend.
 - The PC suspends cleanly with `systemctl suspend`.
 - The user wants phone shortcuts for wake, suspend, and shutdown.
@@ -27,10 +28,10 @@ has a router capable of running a small private wake service.
 
 ## Efficiency
 
-The main efficiency win is using an always-on router as the WOL relay instead
-of adding a Raspberry Pi, NAS, mini PC, or smart plug just to wake the
-workstation. The workstation can remain suspended or fully shut down when it is
-not being used.
+The main efficiency win is using a device that is already on, usually the
+router, as the WOL relay instead of adding a Raspberry Pi, NAS, mini PC, or
+smart plug only to wake the workstation. The workstation can remain suspended
+or fully shut down when it is not being used.
 
 ## Safety
 
