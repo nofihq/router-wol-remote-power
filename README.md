@@ -19,26 +19,18 @@ using it, then wake on demand and reconnect through RustDesk.
   direct `/sys/power/state` or direct `rtcwake`.
 - Optional 2-hour idle suspend through GNOME power management.
 
-## Is This The Best Method?
-
-For this hardware class, this is a strong design, but the repo should not claim
-it is universally “the best” or “the safest.”
-
-Why it is efficient:
+## Why This Setup
 
 - A router is already on in most home networks.
 - No extra always-on relay device is required.
 - The high-power machine can spend long periods fully off or in suspend.
 - Wake works through Ethernet WOL, which is more reliable than Wi-Fi wake.
-
-Why it is reasonably safe:
-
 - No public WAN port forwarding is needed.
 - Tailscale provides the private network path.
 - App endpoints require `Authorization: Bearer <TOKEN>`.
 - Root actions are limited to narrow helper scripts through sudoers.
 
-Tradeoffs:
+It is still hardware-dependent:
 
 - It depends on router firmware, Ethernet WOL, motherboard/UEFI settings, and
   Linux suspend reliability.
@@ -48,13 +40,8 @@ Tradeoffs:
 - Suspend is not as universal as shutdown; NVIDIA, Wi-Fi, USB, ACPI, and kernel
   versions can all matter.
 
-The honest positioning is:
-
-> An energy-efficient phone-controlled WOL/suspend workflow for Linux desktops
-> using an already-on router, Tailscale, iOS Shortcuts, and RustDesk.
-
-See [docs/claims.md](docs/claims.md) for the claim matrix and
-[docs/evaluation.md](docs/evaluation.md) for tradeoffs.
+See [docs/fit-and-tradeoffs.md](docs/fit-and-tradeoffs.md) for the longer
+hardware and security discussion.
 
 ## Architecture
 
@@ -196,7 +183,7 @@ scripts/
   configure_idle_suspend.sh       GNOME 2-hour idle suspend helper
   suspend_via_systemd.sh          Local suspend wrapper
 docs/
-  claims.md                       Public claim matrix and evidence links
+  fit-and-tradeoffs.md            When this setup is a good fit
   hardware-compatibility.md       Firmware, WOL, and suspend constraints
   linux-suspend-troubleshooting.md
                                    Generic Linux suspend debugging notes

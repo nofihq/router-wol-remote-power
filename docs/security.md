@@ -16,6 +16,10 @@ This project is designed for private tailnet use, not public internet exposure.
 - Keep sudoers entries limited to fixed root-owned helper scripts.
 - Keep `/usr/local/sbin/pc_*_with_wol` owned by root and not writable by the API
   user.
+- If host or router firewalls are used, allow `8080` only on the router's
+  Tailscale/private interface and `8081` only on the PC's Tailscale/private
+  interface.
+- Use separate tokens for `/wake` and `/shutdown`/`/suspend` when practical.
 
 ## Threats To Care About
 

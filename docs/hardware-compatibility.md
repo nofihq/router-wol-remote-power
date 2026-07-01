@@ -16,6 +16,20 @@ Firmware settings to check:
 - ErP or deep power saving disabled if it blocks wake from shutdown.
 - Boot order configured so the machine returns to the desired OS.
 
+Common setting labels:
+
+- `Wake-on-LAN`
+- `Resume by LAN`
+- `Power On By PCI-E`
+- `PCIe Wake`
+- `ErP Ready`
+- `Deep Sleep`
+- `Restore after AC Power Loss` or `AC Back`
+
+`Restore after AC Power Loss` is separate from WOL. It controls behavior after
+a power outage, not normal magic-packet wake. Configure it according to your
+preference.
+
 ## PC Fit
 
 Best fit:
@@ -88,6 +102,10 @@ Poor fits:
 - Routers that cannot run Tailscale or cannot expose a private-only service.
 - Routers on a different VLAN/broadcast domain from the target PC.
 - Routers where WOL packets cannot be sent on the LAN bridge/interface.
+
+For ASUSWRT-Merlin, the important router-side settings are SSH access for
+setup, JFFS custom scripts enabled, USB-backed persistent storage for Entware,
+and a private Tailscale/private-network path to the API.
 
 ## Operating Systems
 

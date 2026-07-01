@@ -35,6 +35,13 @@ PC:
 - Linux can suspend through `systemctl suspend`.
 - NVIDIA users should enable/use NVIDIA's systemd suspend services.
 
+Common PC firmware setting names:
+
+- Enable: `Wake-on-LAN`, `Resume by LAN`, `Power On By PCI-E`, `PCIe Wake`, or
+  similar.
+- Disable if it blocks wake: `ErP`, `ErP Ready`, `Deep Sleep`, or similar.
+- Set boot order so the Linux install that runs this service boots first.
+
 Router:
 
 - Router is always on.
@@ -54,7 +61,32 @@ RustDesk:
 - A permanent unattended password is set.
 - The phone has the PC ID/password saved outside this repository.
 
-## 2. Discover Local Values
+## 2. Install PC Prerequisites
+
+On Ubuntu/Debian-style systems:
+
+```bash
+sudo apt update
+sudo apt install -y git python3 ethtool curl
+```
+
+Install and sign in to Tailscale on the PC. Confirm the PC has a tailnet IP:
+
+```bash
+tailscale ip -4
+```
+
+Install RustDesk and confirm unattended access works locally before depending
+on it remotely.
+
+Clone this repository on the PC:
+
+```bash
+git clone https://github.com/<OWNER>/router-wol-remote-power.git
+cd router-wol-remote-power
+```
+
+## 3. Discover Local Values
 
 On the PC:
 
@@ -82,7 +114,7 @@ Common ASUSWRT-Merlin LAN bridge interface:
 br0
 ```
 
-## 3. Generate Tokens
+## 4. Generate Tokens
 
 Use one strong random token for the router API and one for the PC API, or one
 shared token if you accept that tradeoff.
@@ -113,7 +145,10 @@ printf "%s\n" "<TOKEN>" > /opt/share/pc-control/.token
 chmod 0600 /opt/share/pc-control/.token
 ```
 
-## 4. PC API
+## 5. PC API
+
+In the commands below, replace `<LINUX_USER>` with the Linux account that will
+run the PC API service.
 
 Install helper scripts as root-owned files:
 
@@ -126,10 +161,13 @@ Install sudoers rules:
 
 ```bash
 sudo cp pc/sudoers.d/phone-wol-power.example /etc/sudoers.d/phone-wol-power
-sudo nano /etc/sudoers.d/phone-wol-power
+sudo visudo -f /etc/sudoers.d/phone-wol-power
 sudo chmod 0440 /etc/sudoers.d/phone-wol-power
 sudo visudo -c
 ```
+
+Inside the sudoers file, replace both `<LINUX_USER>` placeholders before
+saving.
 
 Create `/etc/phone-wol-power/pc.env`:
 
@@ -163,15 +201,35 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now pc-power-api.service
 ```
 
+Inside the systemd service, replace `<LINUX_USER>`. If your Tailscale interface
+is not named `tailscale0`, update the `ExecStartPre` line.
+
 Test status:
 
 ```bash
 curl -H "Authorization: Bearer <TOKEN>" http://<PC_TAILSCALE_IP>:8081/status
 ```
 
-## 5. Router API
+## 6. Router API
 
-On the router, install Python and make sure `ether-wake` exists.
+### ASUSWRT-Merlin Checklist
+
+In the router web UI:
+
+- `Administration -> System -> Enable SSH`: `LAN only` while setting this up.
+- `Administration -> System -> Enable JFFS custom scripts and configs`: `Yes`.
+- If JFFS was just enabled for the first time, initialize it and reboot before
+  installing scripts.
+- Attach USB storage for Entware/persistent `/opt` storage.
+
+On the router over SSH:
+
+- Install/configure Entware.
+- Install Python if it is not already available under `/opt/bin/python3`.
+- Install/start Tailscale or otherwise provide private-only access to the
+  router API.
+- Confirm `tailscale ip -4` returns a router tailnet IP.
+- Confirm a WOL sender exists, for example `ether-wake`.
 
 Create a router token file and router env file outside git:
 
@@ -181,19 +239,66 @@ ROUTER_TAILSCALE_IP=<ROUTER_TAILSCALE_IP>
 ROUTER_API_PORT=8080
 WOL_LAN_INTERFACE=br0
 WOL_TARGET_MAC=<PC_ETHERNET_MAC>
+ETHER_WAKE=<PATH_TO_ETHER_WAKE>
 ```
 
-For ASUSWRT-Merlin:
+Copy the router files from your workstation to the router:
 
-1. Enable custom scripts in the router UI.
-2. Install/configure Entware if you need Python from `/opt`.
-3. Put persistent files under a USB-backed `/opt/share/pc-control` or similar.
-4. Adapt `router/S99wake-api.example` for `/opt/etc/init.d/`.
-5. Ensure Entware init scripts start from Merlin's `services-start` path.
-6. Keep the API reachable only through Tailscale/private router interfaces.
+```bash
+scp router/router_wake.py router/S99wake-api.example <ROUTER_SSH_USER>@<ROUTER_LAN_IP>:/tmp/
+```
 
-Install `router/router_wake.py` and an init script appropriate for your router
-firmware. For ASUSWRT-Merlin with Entware, adapt `router/S99wake-api.example`.
+Then on the router:
+
+```sh
+mkdir -p /opt/share/pc-control /opt/etc/init.d /opt/var/log /opt/var/run
+cp /tmp/router_wake.py /opt/share/pc-control/router_wake.py
+cp /tmp/S99wake-api.example /opt/etc/init.d/S99wake-api
+chmod 0755 /opt/share/pc-control/router_wake.py /opt/etc/init.d/S99wake-api
+```
+
+Create `/opt/share/pc-control/router.env`:
+
+```sh
+cat > /opt/share/pc-control/router.env <<'EOF'
+AUTH_TOKEN_FILE=/opt/share/pc-control/.token
+ROUTER_TAILSCALE_IP=<ROUTER_TAILSCALE_IP>
+ROUTER_API_PORT=8080
+WOL_LAN_INTERFACE=br0
+WOL_TARGET_MAC=<PC_ETHERNET_MAC>
+ETHER_WAKE=<PATH_TO_ETHER_WAKE>
+EOF
+chmod 0600 /opt/share/pc-control/router.env
+```
+
+Find `<PATH_TO_ETHER_WAKE>` with:
+
+```sh
+command -v ether-wake
+```
+
+If your router uses a different WOL command, wrap it in a small script that
+accepts the same arguments or update `ETHER_WAKE` to the compatible command.
+
+Start the wake API:
+
+```sh
+/opt/etc/init.d/S99wake-api start
+```
+
+For persistence across reboot, ensure your Merlin user scripts start Entware
+init scripts. A common pattern is a `/jffs/scripts/services-start` or
+`/jffs/scripts/post-mount` script that calls:
+
+```sh
+/opt/etc/init.d/rc.unslung start
+```
+
+Keep the router API reachable only over Tailscale or another private path. Do
+not forward a WAN port to it.
+
+If your router firewall blocks local services by default, allow the API port
+only on the Tailscale/private interface. Do not add a WAN allow rule.
 
 Wake command shape:
 
@@ -207,7 +312,7 @@ Test wake while physically present:
 curl -H "Authorization: Bearer <TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/wake
 ```
 
-## 6. iOS Shortcuts
+## 7. iOS Shortcuts
 
 Create these in Shortcuts with **Get Contents of URL**:
 
@@ -222,7 +327,7 @@ Each uses:
 Authorization: Bearer <TOKEN>
 ```
 
-## 7. RustDesk Unattended Access
+## 8. RustDesk Unattended Access
 
 On the PC:
 
@@ -241,7 +346,7 @@ On the phone:
 After waking the PC, give Tailscale and RustDesk a short time to reconnect
 before opening the RustDesk session.
 
-## 8. Test
+## 9. Test
 
 From a tailnet device:
 
@@ -268,7 +373,7 @@ Recommended validation order:
 7. Confirm `/shutdown` powers it off cleanly.
 8. Confirm `/wake` powers it back on.
 
-## 9. Idle Suspend
+## 10. Idle Suspend
 
 For GNOME desktops:
 
