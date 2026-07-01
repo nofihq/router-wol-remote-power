@@ -16,6 +16,29 @@ Firmware settings to check:
 - ErP or deep power saving disabled if it blocks wake from shutdown.
 - Boot order configured so the machine returns to the desired OS.
 
+## PC Fit
+
+Best fit:
+
+- Desktop PC with built-in wired Ethernet.
+- UEFI/BIOS exposes wake settings such as WOL, PCIe wake, or power on by PCI-E.
+- The OS can suspend cleanly through `systemctl suspend`.
+- The PC stays connected to the same wired LAN as the router.
+
+Usually workable with extra testing:
+
+- Custom-built desktops with Realtek, Intel, or similar onboard Ethernet.
+- Small form factor PCs with wired Ethernet and configurable firmware.
+- Linux distributions that use systemd but have different package paths.
+
+Poor fit:
+
+- Wi-Fi-only desktops.
+- Laptops that move between networks or dock/undock often.
+- USB Ethernet adapters that lose standby power during suspend/off.
+- PCs whose firmware cannot wake from the power state you want.
+- Systems where suspend is already unreliable locally.
+
 ## Phone Network
 
 The phone can be on Wi-Fi or cellular. The requirement is not the radio type;
@@ -48,9 +71,23 @@ Works best with routers that provide:
 - a WOL sender such as `ether-wake`
 - Tailscale or another private overlay/private access method
 
-ASUSWRT-Merlin is a good fit because it supports user scripts and third-party
-software through Entware on supported models. OpenWrt and similar firmware can
-also work with equivalent services.
+Good fits:
+
+- ASUSWRT-Merlin routers that support user scripts, USB-backed persistent
+  storage, Entware, Python, and Tailscale or private-only access.
+- OpenWrt routers with packages for Python/Tailscale and a WOL tool.
+- DD-WRT routers if they can run a persistent private service and send WOL.
+- pfSense/OPNsense boxes if the wake service is implemented with their service
+  model and kept private.
+- A NAS, home server, or small Linux box can replace the router relay, but that
+  loses the "no extra always-on relay" advantage if it was not already on.
+
+Poor fits:
+
+- Stock ISP routers with no custom scripts or package support.
+- Routers that cannot run Tailscale or cannot expose a private-only service.
+- Routers on a different VLAN/broadcast domain from the target PC.
+- Routers where WOL packets cannot be sent on the LAN bridge/interface.
 
 ## Operating Systems
 

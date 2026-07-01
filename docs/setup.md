@@ -3,6 +3,12 @@
 This is a template-level guide. Replace placeholder values with your own
 tailnet IPs, LAN interface names, MAC addresses, and token paths.
 
+If your hardware matches the compatibility checklist and every placeholder is
+replaced correctly, these steps should reproduce the workflow. Hardware,
+firmware, router firmware, and Linux suspend behavior can still require local
+adjustment, so validate in the order shown in the test section before relying
+on it remotely.
+
 ## 0. Workflow Summary
 
 You will end up with:
@@ -25,6 +31,7 @@ PC:
 - You know the wired NIC MAC address.
 - UEFI/BIOS has Wake-on-LAN/PCIe wake enabled.
 - ErP/deep power saving is disabled if it prevents wake from shutdown.
+- Boot order returns to the OS that runs the PC API.
 - Linux can suspend through `systemctl suspend`.
 - NVIDIA users should enable/use NVIDIA's systemd suspend services.
 
@@ -86,12 +93,24 @@ Example:
 openssl rand -base64 32
 ```
 
-Store tokens outside git:
+Store tokens outside git.
+
+For the PC API, the service user must be able to read the token. A simple
+portable option is to store it under that user's home directory:
 
 ```bash
-sudo install -d -m 0700 /etc/phone-wol-power
-sudo sh -c 'printf "%s\n" "<TOKEN>" > /etc/phone-wol-power/token'
-sudo chmod 0600 /etc/phone-wol-power/token
+sudo -u <LINUX_USER> install -d -m 0700 /home/<LINUX_USER>/.config/phone-wol-power
+sudo -u <LINUX_USER> sh -c 'printf "%s\n" "<TOKEN>" > /home/<LINUX_USER>/.config/phone-wol-power/token'
+sudo -u <LINUX_USER> chmod 0600 /home/<LINUX_USER>/.config/phone-wol-power/token
+```
+
+For the router API, use the router's normal root-owned private storage. On an
+ASUSWRT-Merlin/Entware setup this may look like:
+
+```sh
+mkdir -p /opt/share/pc-control
+printf "%s\n" "<TOKEN>" > /opt/share/pc-control/.token
+chmod 0600 /opt/share/pc-control/.token
 ```
 
 ## 4. PC API
@@ -114,10 +133,15 @@ sudo visudo -c
 
 Create `/etc/phone-wol-power/pc.env`:
 
+```bash
+sudo install -d -o root -g root -m 0755 /etc/phone-wol-power
+sudo nano /etc/phone-wol-power/pc.env
+```
+
 ```text
 PC_TAILSCALE_IP=<PC_TAILSCALE_IP>
 PC_API_PORT=8081
-AUTH_TOKEN_FILE=/etc/phone-wol-power/token
+AUTH_TOKEN_FILE=/home/<LINUX_USER>/.config/phone-wol-power/token
 WIRED_IFACE=<PC_WIRED_INTERFACE>
 ```
 

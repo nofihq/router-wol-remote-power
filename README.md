@@ -130,6 +130,7 @@ Required:
 - Motherboard/UEFI support for Wake-on-LAN from S5/off and/or S3/suspend.
 - Router or always-on LAN device that can send a magic packet on the LAN.
 - Private network path such as Tailscale between phone, router, and PC.
+- Boot order configured so wake returns to the OS running the PC API.
 
 Likely router fit:
 
@@ -140,6 +141,8 @@ Common blockers:
 
 - ErP/Deep Sleep firmware settings can disable wake from off.
 - Wi-Fi WOL is inconsistent; prefer wired Ethernet.
+- USB Ethernet adapters may lose standby power and fail to wake.
+- Stock ISP routers often cannot run the private wake service.
 - Some Linux systems need NVIDIA/systemd suspend hooks enabled.
 - Some USB devices, NVMe drives, Wi-Fi cards, or ACPI firmware break suspend.
 - Broadcast WOL behavior depends on the router and LAN bridge.
@@ -205,7 +208,8 @@ docs/
 
 - Bind APIs to Tailscale IPs, not `0.0.0.0`.
 - Use strong random bearer tokens.
-- Keep token files outside git and mode `0600`.
+- Keep token files outside git and readable only by the service that needs
+  them.
 - Use Tailscale ACLs if possible so only your phone can reach the power APIs.
 - No WAN port forwarding.
 - Keep root privileges narrowed to fixed helper paths.

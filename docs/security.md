@@ -10,7 +10,8 @@ This project is designed for private tailnet use, not public internet exposure.
 - Use a strong random bearer token.
 - Use separate router and PC tokens if you want compromise of one endpoint to
   avoid authorizing the other endpoint.
-- Store token files outside git with mode `0600`.
+- Store token files outside git with mode `0600`, owned by the root-run service
+  or by the non-root service user that must read the token.
 - Prefer Tailscale ACLs that allow only your phone to reach the API ports.
 - Keep sudoers entries limited to fixed root-owned helper scripts.
 - Keep `/usr/local/sbin/pc_*_with_wol` owned by root and not writable by the API

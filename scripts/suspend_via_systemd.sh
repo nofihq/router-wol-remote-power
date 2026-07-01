@@ -5,10 +5,9 @@ if [ "${1:-}" != "--confirm" ]; then
   cat >&2 <<'EOF'
 Refusing to suspend without confirmation.
 
-This uses the working path for this machine: systemd suspend. That lets
-nvidia-suspend.service and nvidia-resume.service use NVIDIA's required procfs
-suspend interface. Do not use direct rtcwake/sysfs suspend on this machine while
-NVreg_PreserveVideoMemoryAllocations=1 is enabled.
+This uses systemd suspend so driver-managed suspend hooks can run. That matters
+on systems where GPU drivers, especially NVIDIA, need their systemd suspend and
+resume services.
 
 Run:
 
@@ -17,13 +16,30 @@ EOF
   exit 2
 fi
 
-eth_if="${WOL_ETH_IF:-enp5s0}"
+config_file="${PHONE_WOL_POWER_ENV:-/etc/phone-wol-power/pc.env}"
+eth_if="${WOL_ETH_IF:-${WIRED_IFACE:-}}"
+
+if [ -z "$eth_if" ] && [ -r "$config_file" ]; then
+  eth_if="$(sed -n 's/^WIRED_IFACE=//p' "$config_file" | tail -n 1)"
+fi
+
+if [ -z "$eth_if" ]; then
+  echo "Set WOL_ETH_IF, WIRED_IFACE, or WIRED_IFACE in $config_file." >&2
+  exit 2
+fi
+
+case "$eth_if" in
+  *[!A-Za-z0-9_.:-]*)
+    echo "Invalid Ethernet interface: $eth_if" >&2
+    exit 2
+    ;;
+esac
 running_as_root=0
 
 if [ "$(id -u)" -ne 0 ]; then
   if [ -t 0 ]; then
     echo "Re-running with sudo so WOL can be reasserted before suspend." >&2
-    exec sudo --preserve-env=PATH,WOL_ETH_IF "$0" "$@"
+    exec sudo --preserve-env=PATH,WOL_ETH_IF,WIRED_IFACE,PHONE_WOL_POWER_ENV "$0" "$@"
   fi
   echo "No terminal is available for sudo; continuing with systemd suspend without reasserting WOL." >&2
 else

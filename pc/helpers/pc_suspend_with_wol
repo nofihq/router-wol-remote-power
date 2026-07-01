@@ -8,7 +8,10 @@ if [ -z "$WIRED_IFACE" ] && [ -r "$CONFIG_FILE" ]; then
   WIRED_IFACE="$(sed -n 's/^WIRED_IFACE=//p' "$CONFIG_FILE" | tail -n 1)"
 fi
 
-WIRED_IFACE="${WIRED_IFACE:-enp5s0}"
+if [ -z "$WIRED_IFACE" ]; then
+  echo "Set WIRED_IFACE in $CONFIG_FILE or the environment." >&2
+  exit 2
+fi
 
 case "$WIRED_IFACE" in
   *[!A-Za-z0-9_.:-]*|"")
