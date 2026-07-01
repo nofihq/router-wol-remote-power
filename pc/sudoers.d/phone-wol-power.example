@@ -1,0 +1,5 @@
+# Copy to /etc/sudoers.d/phone-wol-power with mode 0440.
+# Replace <LINUX_USER> with the user running pc_power_api.py.
+
+<LINUX_USER> ALL=(root) NOPASSWD: /usr/local/sbin/pc_poweroff_with_wol
+<LINUX_USER> ALL=(root) NOPASSWD: /usr/local/sbin/pc_suspend_with_wol

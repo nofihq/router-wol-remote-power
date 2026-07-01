@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+CONFIG_FILE="${PHONE_WOL_POWER_ENV:-/etc/phone-wol-power/pc.env}"
+WIRED_IFACE="${WIRED_IFACE:-}"
+
+if [ -z "$WIRED_IFACE" ] && [ -r "$CONFIG_FILE" ]; then
+  WIRED_IFACE="$(sed -n 's/^WIRED_IFACE=//p' "$CONFIG_FILE" | tail -n 1)"
+fi
+
+WIRED_IFACE="${WIRED_IFACE:-enp5s0}"
+
+case "$WIRED_IFACE" in
+  *[!A-Za-z0-9_.:-]*|"")
+    echo "Invalid WIRED_IFACE: $WIRED_IFACE" >&2
+    exit 2
+    ;;
+esac
+
+/usr/bin/logger -t phone-wol-power "Reasserting ${WIRED_IFACE} Wake-on-LAN before suspend"
+/usr/sbin/ethtool -s "$WIRED_IFACE" wol g
+exec /usr/bin/systemctl suspend

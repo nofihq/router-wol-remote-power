@@ -1,0 +1,15 @@
+[Unit]
+Description=PC Power API
+After=network-online.target tailscaled.service
+Wants=network-online.target tailscaled.service
+
+[Service]
+EnvironmentFile=/etc/phone-wol-power/pc.env
+ExecStartPre=/bin/sh -c 'ip -o -4 addr show dev tailscale0 | grep -q "${PC_TAILSCALE_IP}/"'
+ExecStart=/usr/bin/python3 /opt/phone-wol-power/pc/pc_power_api.py
+Restart=on-failure
+RestartSec=2
+User=<LINUX_USER>
+
+[Install]
+WantedBy=multi-user.target

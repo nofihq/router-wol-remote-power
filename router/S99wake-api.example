@@ -1,0 +1,33 @@
+#!/bin/sh
+
+ENABLED=yes
+PROG=/opt/bin/python3
+SCRIPT=/opt/share/pc-control/router_wake.py
+PIDFILE=/opt/var/run/router-wake-api.pid
+LOGFILE=/opt/var/log/router-wake-api.log
+ENVFILE=/opt/share/pc-control/router.env
+
+start() {
+  [ "$ENABLED" = yes ] || exit 0
+  if [ -f "$ENVFILE" ]; then
+    set -a
+    . "$ENVFILE"
+    set +a
+  fi
+  echo "Starting router wake API"
+  nohup "$PROG" "$SCRIPT" >> "$LOGFILE" 2>&1 &
+  echo $! > "$PIDFILE"
+}
+
+stop() {
+  echo "Stopping router wake API"
+  [ -f "$PIDFILE" ] && kill "$(cat "$PIDFILE")" 2>/dev/null || true
+  rm -f "$PIDFILE"
+}
+
+case "$1" in
+  start) start ;;
+  stop) stop ;;
+  restart) stop; start ;;
+  *) echo "Usage: $0 {start|stop|restart}"; exit 1 ;;
+esac

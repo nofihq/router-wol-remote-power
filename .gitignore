@@ -1,0 +1,10 @@
+logs/
+.token
+*.token
+*.secret
+*.env
+!.env.example
+__pycache__/
+*.pyc
+AGENTS.md
+CLAUDE.md
