@@ -41,8 +41,11 @@ always-on device.
 
 ## Safety
 
-This is safer than exposing a power API to the public internet because the API
-is designed to bind to Tailscale/private addresses only. It still depends on:
+This is safer than exposing a power API to the public internet because access
+is designed to stay inside Tailscale/private networking. On routers that can
+bind directly to the tailnet IP, do that. On ASUSWRT-Merlin/Tailscale userspace
+setups that need `ROUTER_LISTEN_IP=0.0.0.0`, pair it with router firewall
+rules and app-layer source allowlisting. It still depends on:
 
 - strong bearer tokens
 - Tailscale device and ACL hygiene

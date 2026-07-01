@@ -72,7 +72,19 @@ Copy that address into:
 <ROUTER_TAILSCALE_IP>
 ```
 
-The router wake API binds to this address on port `8080`.
+The iPhone Shortcut calls this address on port `8080`.
+
+The router wake API has two bind modes:
+
+- Preferred: bind directly to `<ROUTER_TAILSCALE_IP>` when the router OS
+  supports that reliably.
+- ASUSWRT-Merlin/Tailscale userspace fallback: set `ROUTER_LISTEN_IP=0.0.0.0`,
+  keep the Shortcut URL pointed at `<ROUTER_TAILSCALE_IP>`, and restrict access
+  with firewall rules plus `ROUTER_ALLOWED_CLIENT_NETS`.
+
+The fallback exists because some router/Tailscale combinations deliver traffic
+to local services in a way that does not behave like a normal bind to the
+tailnet IP.
 
 ## Settings You Do Not Need
 

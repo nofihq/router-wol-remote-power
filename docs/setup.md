@@ -276,11 +276,26 @@ Create a router token file and router env file outside git:
 ```text
 AUTH_TOKEN_FILE=/opt/share/pc-control/.token
 ROUTER_TAILSCALE_IP=<ROUTER_TAILSCALE_IP>
+ROUTER_LISTEN_IP=<ROUTER_LISTEN_IP>
 ROUTER_API_PORT=8080
+ROUTER_ALLOWED_CLIENT_NETS=<ROUTER_ALLOWED_CLIENT_NETS>
 WOL_LAN_INTERFACE=br0
 WOL_TARGET_MAC=<PC_ETHERNET_MAC>
 ETHER_WAKE=<PATH_TO_ETHER_WAKE>
+TAILSCALE_REQUIRED=yes
+TAILSCALE_CMD=<PATH_TO_TAILSCALE>
 ```
+
+Use these bind values:
+
+- Preferred router bind: `ROUTER_LISTEN_IP=<ROUTER_TAILSCALE_IP>`.
+- ASUSWRT-Merlin/Tailscale userspace fallback:
+  `ROUTER_LISTEN_IP=0.0.0.0` and
+  `ROUTER_ALLOWED_CLIENT_NETS=127.0.0.0/8,::1,100.64.0.0/10,fd7a:115c:a1e0::/48`.
+
+The fallback is for router setups where binding directly to the Tailscale IP is
+not reliable. It must be paired with firewall rules that allow loopback and the
+Tailscale/private interface, then drop other sources for port `8080`.
 
 Copy the router files from your workstation to the router:
 
@@ -303,10 +318,14 @@ Create `/opt/share/pc-control/router.env`:
 cat > /opt/share/pc-control/router.env <<'EOF'
 AUTH_TOKEN_FILE=/opt/share/pc-control/.token
 ROUTER_TAILSCALE_IP=<ROUTER_TAILSCALE_IP>
+ROUTER_LISTEN_IP=0.0.0.0
 ROUTER_API_PORT=8080
+ROUTER_ALLOWED_CLIENT_NETS=127.0.0.0/8,::1,100.64.0.0/10,fd7a:115c:a1e0::/48
 WOL_LAN_INTERFACE=br0
 WOL_TARGET_MAC=<PC_ETHERNET_MAC>
 ETHER_WAKE=<PATH_TO_ETHER_WAKE>
+TAILSCALE_REQUIRED=yes
+TAILSCALE_CMD=<PATH_TO_TAILSCALE>
 EOF
 chmod 0600 /opt/share/pc-control/router.env
 ```
@@ -317,6 +336,12 @@ Find `<PATH_TO_ETHER_WAKE>` with:
 command -v ether-wake
 ```
 
+Find `<PATH_TO_TAILSCALE>` with:
+
+```sh
+command -v tailscale
+```
+
 If your router uses a different WOL command, wrap it in a small script that
 accepts the same arguments or update `ETHER_WAKE` to the compatible command.
 
@@ -324,6 +349,7 @@ Start the wake API:
 
 ```sh
 /opt/etc/init.d/S99wake-api start
+/opt/etc/init.d/S99wake-api status
 ```
 
 For persistence across reboot, ensure your Merlin user scripts start Entware
@@ -337,8 +363,36 @@ init scripts. A common pattern is a `/jffs/scripts/services-start` or
 Keep the router API reachable only over Tailscale or another private path. Do
 not forward a WAN port to it.
 
-If your router firewall blocks local services by default, allow the API port
-only on the Tailscale/private interface. Do not add a WAN allow rule.
+On ASUSWRT-Merlin, add persistent firewall rules with `/jffs/scripts/firewall-start`.
+The important order is loopback allow, Tailscale/private allow, then drop other
+sources for router port `8080`.
+
+Example template:
+
+```sh
+#!/bin/sh
+API_PORT=8080
+TS_IFACE=tailscale0
+
+iptables -C INPUT -i lo -p tcp --dport "$API_PORT" -j ACCEPT 2>/dev/null ||
+  iptables -I INPUT 1 -i lo -p tcp --dport "$API_PORT" -j ACCEPT
+
+iptables -C INPUT -i "$TS_IFACE" -p tcp --dport "$API_PORT" -j ACCEPT 2>/dev/null ||
+  iptables -I INPUT 2 -i "$TS_IFACE" -p tcp --dport "$API_PORT" -j ACCEPT
+
+iptables -C INPUT -p tcp --dport "$API_PORT" -j DROP 2>/dev/null ||
+  iptables -I INPUT 3 -p tcp --dport "$API_PORT" -j DROP
+```
+
+Then:
+
+```sh
+chmod 0755 /jffs/scripts/firewall-start
+/jffs/scripts/firewall-start
+```
+
+This handles the Merlin/Tailscale case where the request may be delivered
+locally or through loopback. Do not add a WAN allow rule or port-forward rule.
 
 Wake command shape:
 

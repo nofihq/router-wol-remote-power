@@ -1,33 +1,105 @@
 #!/bin/sh
 
-ENABLED=yes
-PROG=/opt/bin/python3
-SCRIPT=/opt/share/pc-control/router_wake.py
-PIDFILE=/opt/var/run/router-wake-api.pid
-LOGFILE=/opt/var/log/router-wake-api.log
-ENVFILE=/opt/share/pc-control/router.env
+ENABLED=${ENABLED:-yes}
+PROG=${PROG:-/opt/bin/python3}
+SCRIPT=${SCRIPT:-/opt/share/pc-control/router_wake.py}
+PIDFILE=${PIDFILE:-/opt/var/run/router-wake-api.pid}
+LOGFILE=${LOGFILE:-/opt/var/log/router-wake-api.log}
+ENVFILE=${ENVFILE:-/opt/share/pc-control/router.env}
+TAILSCALE_REQUIRED=${TAILSCALE_REQUIRED:-yes}
+TAILSCALE_CMD=${TAILSCALE_CMD:-/opt/bin/tailscale}
+TAILSCALE_WAIT_SECONDS=${TAILSCALE_WAIT_SECONDS:-60}
 
-start() {
-  [ "$ENABLED" = yes ] || exit 0
+load_env() {
   if [ -f "$ENVFILE" ]; then
     set -a
     . "$ENVFILE"
     set +a
   fi
+}
+
+is_running() {
+  [ -f "$PIDFILE" ] || return 1
+  pid="$(cat "$PIDFILE" 2>/dev/null)"
+  [ -n "$pid" ] || return 1
+  kill -0 "$pid" 2>/dev/null
+}
+
+wait_for_tailscale() {
+  [ "$TAILSCALE_REQUIRED" = yes ] || return 0
+
+  if ! command -v "$TAILSCALE_CMD" >/dev/null 2>&1; then
+    echo "Tailscale command not found: $TAILSCALE_CMD"
+    return 1
+  fi
+
+  waited=0
+  while [ "$waited" -lt "$TAILSCALE_WAIT_SECONDS" ]; do
+    if "$TAILSCALE_CMD" status >/dev/null 2>&1 && [ -n "$("$TAILSCALE_CMD" ip -4 2>/dev/null)" ]; then
+      return 0
+    fi
+    sleep 2
+    waited=$((waited + 2))
+  done
+
+  echo "Timed out waiting for Tailscale readiness"
+  return 1
+}
+
+start() {
+  [ "$ENABLED" = yes ] || exit 0
+  load_env
+
+  if is_running; then
+    echo "Router wake API already running"
+    return 0
+  fi
+
+  [ -x "$PROG" ] || { echo "Python not executable: $PROG"; return 1; }
+  [ -f "$SCRIPT" ] || { echo "Script missing: $SCRIPT"; return 1; }
+  wait_for_tailscale || return 1
+
   echo "Starting router wake API"
   nohup "$PROG" "$SCRIPT" >> "$LOGFILE" 2>&1 &
   echo $! > "$PIDFILE"
+  sleep 1
+
+  if ! is_running; then
+    echo "Router wake API failed to start; check $LOGFILE"
+    rm -f "$PIDFILE"
+    return 1
+  fi
 }
 
 stop() {
+  load_env
   echo "Stopping router wake API"
-  [ -f "$PIDFILE" ] && kill "$(cat "$PIDFILE")" 2>/dev/null || true
+  if is_running; then
+    pid="$(cat "$PIDFILE")"
+    kill "$pid" 2>/dev/null || true
+    waited=0
+    while kill -0 "$pid" 2>/dev/null && [ "$waited" -lt 10 ]; do
+      sleep 1
+      waited=$((waited + 1))
+    done
+  fi
   rm -f "$PIDFILE"
+}
+
+status() {
+  load_env
+  if is_running; then
+    echo "Router wake API running: $(cat "$PIDFILE")"
+  else
+    echo "Router wake API stopped"
+    return 1
+  fi
 }
 
 case "$1" in
   start) start ;;
   stop) stop ;;
   restart) stop; start ;;
-  *) echo "Usage: $0 {start|stop|restart}"; exit 1 ;;
+  status) status ;;
+  *) echo "Usage: $0 {start|stop|restart|status}"; exit 1 ;;
 esac

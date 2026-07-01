@@ -12,15 +12,17 @@ through RustDesk.
 
 ## What This Is
 
-- Wake a powered-off or suspended PC from an iPhone Shortcut.
-- Suspend or shut down an awake PC from an iPhone Shortcut.
+- Wake a powered-off PC from an iPhone Shortcut, and wake from suspend when the
+  PC firmware/NIC support it.
+- Suspend or shut down an awake Linux PC from an iPhone Shortcut.
 - Keep the power controls reachable only over a private tailnet/VPN, with no
   WAN port forwards.
 - Use the router as the always-on LAN device, avoiding a Raspberry Pi/NAS just
   for WOL relay duty if you do not already run one.
 - Preserve Linux/NVIDIA suspend correctness by using `systemctl suspend`, not
   direct `/sys/power/state` or direct `rtcwake`.
-- Optional 2-hour idle suspend through GNOME power management.
+- Optional 2-hour idle suspend through GNOME power management after manual
+  suspend/wake has been validated locally.
 
 ## At A Glance
 
@@ -67,6 +69,7 @@ It is still hardware-dependent:
 
 - It depends on router firmware, Ethernet WOL, motherboard/UEFI settings, and
   Linux suspend reliability.
+- Shutdown-plus-WOL is usually easier to validate than suspend-plus-WOL.
 - RustDesk unattended access is convenient but increases the importance of a
   strong password and device/account security.
 - A compromised phone, token, or tailnet device could trigger power actions.
@@ -259,7 +262,10 @@ docs/
 
 ## Security Checklist
 
-- Bind APIs to Tailscale IPs, not `0.0.0.0`.
+- Bind APIs to Tailscale/private IPs where supported.
+- On ASUSWRT-Merlin/Tailscale userspace setups, `ROUTER_LISTEN_IP=0.0.0.0`
+  can be used only with loopback/Tailscale firewall allows, a drop rule for
+  other sources, and `ROUTER_ALLOWED_CLIENT_NETS`.
 - Use strong random bearer tokens.
 - Keep token files outside git and readable only by the service that needs
   them.

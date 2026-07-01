@@ -51,6 +51,12 @@ USB storage is usually part of this path because Entware and `/opt` are commonly
 stored on USB-backed persistent storage on ASUSWRT-Merlin. USB is not a
 project-wide requirement; it is a Merlin/Entware persistence detail.
 
+Some Merlin/Tailscale installs should not bind the API directly to the
+Tailscale IP. If testing shows that bind mode is unreliable, use
+`ROUTER_LISTEN_IP=0.0.0.0`, keep the iPhone Shortcut pointed at
+`<ROUTER_TAILSCALE_IP>:8080`, and add firewall rules that allow loopback and
+the Tailscale/private interface before dropping other sources for port `8080`.
+
 ### OpenWrt
 
 Good fit when packages are available for:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import http.server
 import hmac
+import ipaddress
 import logging
 import os
 import socketserver
@@ -8,12 +9,15 @@ import subprocess
 import urllib.parse
 
 
-LISTEN_IP = os.environ.get("ROUTER_TAILSCALE_IP", "127.0.0.1")
+LISTEN_IP = os.environ.get(
+    "ROUTER_LISTEN_IP", os.environ.get("ROUTER_TAILSCALE_IP", "127.0.0.1")
+)
 LISTEN_PORT = int(os.environ.get("ROUTER_API_PORT", "8080"))
 TOKEN_FILE = os.environ.get("AUTH_TOKEN_FILE", "/opt/share/pc-control/.token")
 WOL_INTERFACE = os.environ.get("WOL_LAN_INTERFACE", "br0")
 WOL_TARGET_MAC = os.environ["WOL_TARGET_MAC"]
 ETHER_WAKE = os.environ.get("ETHER_WAKE", "/usr/sbin/ether-wake")
+ALLOWED_CLIENT_NETS = os.environ.get("ROUTER_ALLOWED_CLIENT_NETS", "")
 
 with open(TOKEN_FILE, encoding="utf-8") as f:
     TOKEN = f.read().strip()
@@ -22,9 +26,27 @@ if len(TOKEN) < 20:
     raise SystemExit("Refusing to start with a short bearer token")
 
 
+def _parse_allowed_networks(value):
+    networks = []
+    for item in value.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        networks.append(ipaddress.ip_network(item, strict=False))
+    return networks
+
+
+ALLOWED_NETWORKS = _parse_allowed_networks(ALLOWED_CLIENT_NETS)
+
+
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         path = urllib.parse.urlparse(self.path).path
+        if ALLOWED_NETWORKS and not self._client_allowed():
+            logging.warning("client denied by allowlist: %s", self.client_address[0])
+            self._respond(403, "Forbidden")
+            return
+
         auth = self.headers.get("Authorization", "")
         if not hmac.compare_digest(auth, f"Bearer {TOKEN}"):
             self._respond(403, "Forbidden")
@@ -44,6 +66,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._respond(200, "Wake packet sent")
         else:
             self._respond(404, "Not Found")
+
+    def _client_allowed(self):
+        try:
+            client_ip = ipaddress.ip_address(self.client_address[0])
+        except ValueError:
+            return False
+        return any(client_ip in network for network in ALLOWED_NETWORKS)
 
     def _respond(self, code, msg):
         body = msg.encode("utf-8")
@@ -67,4 +96,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     with ThreadedServer((LISTEN_IP, LISTEN_PORT), Handler) as httpd:
         logging.info("Router wake API listening on %s:%s", LISTEN_IP, LISTEN_PORT)
+        if ALLOWED_NETWORKS:
+            logging.info(
+                "Router wake API allowed client networks: %s",
+                ", ".join(str(network) for network in ALLOWED_NETWORKS),
+            )
         httpd.serve_forever()
