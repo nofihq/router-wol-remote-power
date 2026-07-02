@@ -57,6 +57,31 @@ Suspend and shutdown are normal OS actions. They are safer for data integrity
 than cutting power with a smart plug, but they do not replace backups, disk
 encryption, or careful remote-access credential handling.
 
+## Daily Use And Wear
+
+Using sleep or clean shutdown every day is normal PC behavior. It should not
+damage a healthy desktop by itself.
+
+`systemctl suspend` is not a full reboot. The OS pauses the running session,
+keeps enough standby power for resume, and continues from the same desktop
+state when the machine wakes. Depending on firmware, this may be traditional
+suspend-to-RAM (`deep`) or a lighter idle sleep state (`s2idle`).
+
+Shutdown is different. Linux stops services, unmounts filesystems, powers off,
+and the next wake goes through firmware/UEFI and a normal Linux boot. That is
+more like starting the PC fresh.
+
+Daily sleep/wake or daily clean shutdown/startup is usually fine. Avoid the
+things that are actually risky:
+
+- holding the power button unless the machine is frozen
+- cutting AC power with a smart plug while Linux is running
+- repeatedly forcing failed suspend attempts
+- relying on remote access without backups for important data
+
+If both paths work reliably, use suspend for shorter breaks and shutdown for
+longer periods away.
+
 ## Sources
 
 - Tailscale documents WireGuard-based encrypted device connectivity:
