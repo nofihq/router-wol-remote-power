@@ -68,7 +68,8 @@ symptom is:
 - the previous boot log ends near `PM: suspend entry (deep)` with no resume log
 
 That means the machine did not finish entering a clean sleep state. WOL cannot
-recover that state.
+recover that state. Treat it as a failed suspend attempt, not as the normal
+`sleep -> on` state described in the shortcut docs.
 
 Check whether the system uses `iwlwifi`:
 
@@ -128,6 +129,21 @@ esac
 
 Install it as a root-owned executable file under `/etc/systemd/system-sleep/`.
 Test the `pre` and `post` paths manually before trying another real suspend.
+
+If the hook does not log during a real suspend attempt, put the workaround in
+the suspend helper instead. The repo helper supports this through
+`/etc/phone-wol-power/pc.env`:
+
+```text
+SUSPEND_PRE_DOWN_IFACE=<WIFI_INTERFACE>
+SUSPEND_PRE_UNLOAD_MODULES=iwlwifi
+```
+
+With those values set, `/usr/local/sbin/pc_suspend_with_wol` brings the Wi-Fi
+interface down, unloads `iwlwifi`, and only then calls `systemctl suspend`. If
+module unload fails, it refuses suspend instead of continuing into a likely
+black-screen hang. After resume, it reloads the module and brings the interface
+back up.
 
 ## Safe Isolation Order
 

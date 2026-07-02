@@ -116,6 +116,10 @@ Important state behavior:
 API runs inside Linux. When the PC is asleep, the supported remote interaction
 is wake-to-on, not sleep-to-off.
 
+If the screen goes black but the PC stays powered and cannot be woken, that is
+a failed suspend entry, not normal sleep. Fix the Linux suspend issue before
+relying on remote sleep/wake.
+
 ### PC ON
 
 ```text

@@ -213,6 +213,17 @@ AUTH_TOKEN_FILE=/home/<LINUX_USER>/.config/phone-wol-power/token
 WIRED_IFACE=<PC_WIRED_INTERFACE>
 ```
 
+Optional suspend workaround values:
+
+```text
+SUSPEND_PRE_DOWN_IFACE=<WIFI_INTERFACE>
+SUSPEND_PRE_UNLOAD_MODULES=iwlwifi
+```
+
+Do not add those optional values unless suspend hangs and you have already
+confirmed that Ethernet is the primary route. They are for systems where a
+specific driver, commonly Intel `iwlwifi`, blocks clean suspend.
+
 Keep this file root-owned and not writable by the API user:
 
 ```bash

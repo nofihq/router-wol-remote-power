@@ -15,6 +15,11 @@ The router wake API and the PC power API are different services:
 `PC OFF` only works while Linux is awake because the shutdown endpoint runs on
 the PC.
 
+If a suspend attempt leaves the monitor black while fans or PC power stay on,
+do not treat that as normal sleep. The PC is wedged during suspend entry, so
+the PC API cannot answer and WOL may not wake it. Fix suspend first; see
+[Linux Suspend Troubleshooting](linux-suspend-troubleshooting.md).
+
 Supported direct interactions:
 
 - off -> on
