@@ -104,6 +104,18 @@ flowchart LR
 
 Create three iOS Shortcuts using **Get Contents of URL**.
 
+Important state behavior:
+
+| PC state | Shortcut that can answer | Why |
+| --- | --- | --- |
+| On | `PC SUSPEND`, `PC OFF`, `PC STATUS` | Linux and the PC API are running. |
+| Asleep | `PC ON` | Only the router wake API is awake. |
+| Fully off | `PC ON` | Only the router wake API is awake. |
+
+`PC OFF` cannot shut down an already-sleeping PC directly because the shutdown
+API runs inside Linux. When the PC is asleep, the supported remote interaction
+is wake-to-on, not sleep-to-off.
+
 ### PC ON
 
 ```text

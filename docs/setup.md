@@ -34,6 +34,10 @@ You will end up with:
 The phone can be on home Wi-Fi, outside Wi-Fi, or cellular, as long as the phone
 is connected to Tailscale and can reach the router/PC tailnet IPs.
 
+The PC API is not available while the PC is asleep or fully off. In those
+states, only the router wake API can answer. Direct sleep-to-off is not
+supported; the supported transition from sleep is sleep-to-on.
+
 ## 1. Compatibility Checklist
 
 PC:

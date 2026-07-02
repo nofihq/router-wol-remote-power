@@ -56,6 +56,79 @@ power state you want.
 - The Ethernet NIC loses standby power in S5/off.
 - Router sends the WOL packet on the wrong interface or VLAN.
 
+## Intel Wi-Fi Driver Hangs
+
+Some Intel Wi-Fi cards using `iwlwifi` can hang while entering suspend. The
+symptom is:
+
+- the display goes black
+- keyboard and mouse lights turn off
+- fans or PC power remain on
+- WOL packets are sent but do not wake the PC
+- the previous boot log ends near `PM: suspend entry (deep)` with no resume log
+
+That means the machine did not finish entering a clean sleep state. WOL cannot
+recover that state.
+
+Check whether the system uses `iwlwifi`:
+
+```bash
+lspci -nnk | grep -A4 -i 'network controller'
+lsmod | grep -E 'iwlwifi|iwlmvm|mac80211'
+```
+
+First confirm Ethernet is the primary route so unloading Wi-Fi will not cut off
+remote access:
+
+```bash
+ip route show default
+nmcli -t -f DEVICE,TYPE,STATE,CONNECTION device
+```
+
+Then test unload/reload while physically present:
+
+```bash
+sudo ip link set <WIFI_INTERFACE> down
+sudo modprobe -r iwlwifi
+sudo modprobe iwlwifi
+sudo ip link set <WIFI_INTERFACE> up
+```
+
+If `modprobe -r iwlwifi` fails with a message like `rmmod: ERROR: missing
+module name`, inspect `/etc/modprobe.d/iwlwifi.conf`. Some systems ship a
+fragile `remove iwlwifi` rule that recursively calls itself or calls `rmmod`
+with no module arguments. Back it up before editing.
+
+If unload/reload works and suspend hangs only while `iwlwifi` is loaded, add a
+reversible systemd sleep hook that unloads Wi-Fi before suspend and reloads it
+after resume:
+
+```sh
+#!/bin/sh
+set -u
+
+IFACE=<WIFI_INTERFACE>
+TAG=iwlwifi-suspend-workaround
+
+case "$1/$2" in
+  pre/*)
+    if lsmod | grep -q '^iwlwifi'; then
+      logger -t "$TAG" "Taking $IFACE down and unloading iwlwifi before suspend"
+      /sbin/ip link set "$IFACE" down 2>/dev/null || true
+      /sbin/modprobe -r iwlwifi || exit 1
+    fi
+    ;;
+  post/*)
+    logger -t "$TAG" "Reloading iwlwifi after resume"
+    /sbin/modprobe iwlwifi 2>/dev/null || true
+    /sbin/ip link set "$IFACE" up 2>/dev/null || true
+    ;;
+esac
+```
+
+Install it as a root-owned executable file under `/etc/systemd/system-sleep/`.
+Test the `pre` and `post` paths manually before trying another real suspend.
+
 ## Safe Isolation Order
 
 Use the least disruptive checks first:

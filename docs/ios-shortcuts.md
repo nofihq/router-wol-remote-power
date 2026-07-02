@@ -2,6 +2,34 @@
 
 Each shortcut uses one **Get Contents of URL** action.
 
+## State Rules
+
+The router wake API and the PC power API are different services:
+
+| PC state | What works | What times out |
+| --- | --- | --- |
+| On | `PC SUSPEND`, `PC OFF`, `PC STATUS` | Nothing, if the PC API is healthy. |
+| Asleep | `PC ON` | `PC OFF`, `PC SUSPEND`, `PC STATUS` |
+| Fully off | `PC ON` | `PC OFF`, `PC SUSPEND`, `PC STATUS` |
+
+`PC OFF` only works while Linux is awake because the shutdown endpoint runs on
+the PC.
+
+Supported direct interactions:
+
+- off -> on
+- sleep -> on
+- on -> sleep
+- on -> off
+- on -> status
+
+Not supported directly:
+
+- sleep -> off
+- off -> sleep
+- off -> status
+- sleep -> status
+
 ## PC ON
 
 Use this when the PC is asleep or fully shut down.

@@ -28,6 +28,15 @@ iPhone -> Tailscale/private VPN -> router -> WOL packet to PC
 iPhone -> Tailscale/private VPN -> PC -> suspend/shutdown/status
 ```
 
+State behavior:
+
+- When the PC is on, the PC API can answer `status`, `suspend`, and `shutdown`.
+- When the PC is asleep or off, the PC API cannot answer because Linux is not
+  running.
+- When the PC is asleep or off, the router wake API can still answer `wake`.
+- Direct sleep-to-off is not supported. The supported transition from sleep is
+  sleep-to-on.
+
 Do not use this shape:
 
 ```text
