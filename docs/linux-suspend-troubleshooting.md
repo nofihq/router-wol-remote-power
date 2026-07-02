@@ -127,8 +127,20 @@ case "$1/$2" in
 esac
 ```
 
-Install it as a root-owned executable file under `/etc/systemd/system-sleep/`.
-Test the `pre` and `post` paths manually before trying another real suspend.
+Install it as a root-owned executable file under the systemd sleep-script
+directory used by the target machine. Common locations are
+`/etc/systemd/system-sleep/` and `/usr/lib/systemd/system-sleep/`.
+
+Check the path before relying on the hook:
+
+```bash
+strings /usr/lib/systemd/systemd-sleep | grep system-sleep
+```
+
+Some distributions or systemd builds only execute `/usr/lib/systemd/system-sleep`.
+If the hook works when run manually but never logs during real suspend, install
+the hook in the directory printed by that command. Test the `pre` and `post`
+paths manually before trying another real suspend.
 
 If the hook does not log during a real suspend attempt, put the workaround in
 the suspend helper instead. The repo helper supports this through
