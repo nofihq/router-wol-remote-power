@@ -74,6 +74,18 @@ Copy that address into:
 
 The iPhone Shortcut calls this address on port `8080`.
 
+Check the installed version:
+
+```sh
+tailscale version
+```
+
+Use a currently maintained stable release. Router package repositories can
+lag far behind Tailscale's official releases, especially on Entware. An old
+client misses later reliability and security fixes, even if it still appears
+to connect normally. Record the working version and back up the router's
+Tailscale state before upgrading it.
+
 The router wake API has two bind modes:
 
 - Preferred: bind directly to `<ROUTER_TAILSCALE_IP>` when the router OS
@@ -85,6 +97,29 @@ The router wake API has two bind modes:
 The fallback exists because some router/Tailscale combinations deliver traffic
 to local services in a way that does not behave like a normal bind to the
 tailnet IP.
+
+## Key Expiry For Unattended Devices
+
+The PC and router need to remain reachable while nobody is home. If either
+device's Tailscale node key expires, the phone shortcuts that depend on that
+device will time out until it signs in again.
+
+After both devices are signed in and working:
+
+1. Open the Tailscale admin console.
+2. Open the **Machines** page.
+3. Find the router and PC.
+4. Use each device's menu to disable key expiry.
+5. Leave normal expiry enabled on portable devices if you prefer.
+
+Disabling key expiry does not make a device public or disable Tailscale
+encryption. It means the device remains authorized until an administrator
+removes it. Remove the device manually if it is sold, lost, replaced, or
+suspected of compromise.
+
+If a device is already expired or shows `NeedsLogin`, sign it in again first.
+Changing the future expiry setting does not by itself restore a missing live
+session.
 
 ## Settings You Do Not Need
 
@@ -137,3 +172,15 @@ From any device on the same tailnet, after the APIs are installed:
 curl -H "Authorization: Bearer <PC_TOKEN>" http://<PC_TAILSCALE_IP>:8081/status
 curl -H "Authorization: Bearer <ROUTER_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/wake
 ```
+
+Run more than one router test before relying on travel access:
+
+```bash
+for n in 1 2 3 4 5; do
+  tailscale ping -c 1 <ROUTER_TAILSCALE_IP>
+done
+```
+
+All five should answer. See
+[Router Wake Troubleshooting](router-troubleshooting.md) if ping works but the
+wake API intermittently times out.

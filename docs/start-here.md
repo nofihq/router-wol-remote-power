@@ -223,6 +223,13 @@ the wake API files usually live on USB-backed persistent storage. OpenWrt,
 pfSense/OPNsense, and some other router platforms may have enough normal
 persistent storage and may not need USB.
 
+For Merlin/Entware, treat that USB drive as required infrastructure:
+
+- use a reliable drive rather than a disposable promotional stick
+- keep backups of Entware service files and Tailscale state
+- confirm the wake API starts after a router reboot
+- investigate repeated USB I/O stalls before trusting the setup for travel
+
 ## Values To Collect
 
 Before editing service files, collect everything in
@@ -252,6 +259,8 @@ Use this order:
 6. Install the router wake API.
 7. Add iOS Shortcuts.
 8. Add RustDesk unattended access.
-9. Add idle suspend only after manual suspend/wake works.
+9. Disable Tailscale key expiry for the unattended router and PC.
+10. Reboot the router once and confirm Tailscale and the wake API return.
+11. Add idle suspend only after manual suspend/wake works.
 
 Then follow [End-To-End Setup](setup.md).

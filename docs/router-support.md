@@ -51,6 +51,13 @@ USB storage is usually part of this path because Entware and `/opt` are commonly
 stored on USB-backed persistent storage on ASUSWRT-Merlin. USB is not a
 project-wide requirement; it is a Merlin/Entware persistence detail.
 
+That USB drive is part of the remote-power reliability chain. If it stalls,
+normal router Wi-Fi and internet access can continue while Entware programs
+such as Tailscale or the wake API become slow or unresponsive. Use a reliable
+drive, keep configuration backups, and verify USB reads after a router reboot
+or long outage. Do not diagnose a drive from free-memory numbers alone; confirm
+actual blocked I/O first.
+
 Some Merlin/Tailscale installs should not bind the API directly to the
 Tailscale IP. If testing shows that bind mode is unreliable, use
 `ROUTER_LISTEN_IP=0.0.0.0`, keep the iPhone Shortcut pointed at
@@ -116,6 +123,9 @@ Use another already-on LAN device only if the router is locked down or cannot
 send WOL.
 
 Do not use this design with public port forwarding.
+
+For timeouts and USB/Tailscale checks, see
+[Router Wake Troubleshooting](router-troubleshooting.md).
 
 ## Examples
 

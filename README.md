@@ -214,6 +214,10 @@ Common blockers:
 - Some Linux systems need NVIDIA/systemd suspend hooks enabled.
 - Some USB devices, NVMe drives, Wi-Fi cards, or ACPI firmware break suspend.
 - Broadcast WOL behavior depends on the router and LAN bridge.
+- Tailscale node-key expiry can silently remove an unattended PC or router from
+  the private path until it signs in again.
+- On Merlin/Entware, a stalled USB-backed `/opt` can leave ordinary Wi-Fi
+  working while Tailscale or the wake API becomes intermittent.
 - The phone can be on Wi-Fi or cellular; it only needs Tailscale reachability to
   the router/PC tailnet IPs.
 
@@ -272,6 +276,7 @@ docs/
                                    Generic Linux suspend debugging notes
   os-support.md                   Linux, Windows, macOS, and distro notes
   router-support.md               Router-first compatibility and fallbacks
+  router-troubleshooting.md       Router, Tailscale, API, and USB timeout checks
   tailscale.md                    Tailscale/private-network setup
   rustdesk.md                     RustDesk unattended access setup
   setup.md                        End-to-end setup guide
@@ -287,6 +292,8 @@ docs/
 - Keep token files outside git and readable only by the service that needs
   them.
 - Use Tailscale ACLs if possible so only your phone can reach the power APIs.
+- Disable Tailscale key expiry on the unattended router and PC, then remove
+  those devices manually if they are retired or compromised.
 - No WAN port forwarding.
 - Keep root privileges narrowed to fixed helper paths.
 - Test suspend locally before relying on it remotely.

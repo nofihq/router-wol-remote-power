@@ -289,8 +289,15 @@ On the router over SSH:
 - Install Python if it is not already available under `/opt/bin/python3`.
 - Install/start Tailscale or otherwise provide private-only access to the
   router API.
+- Run `tailscale version` and confirm the router is on a currently maintained
+  stable release. Do not assume an old Entware package is current.
 - Confirm `tailscale ip -4` returns a router tailnet IP.
 - Confirm a WOL sender exists, for example `ether-wake`.
+
+On USB-backed Merlin installs, use a reliable flash drive and keep a backup of
+the Tailscale state, wake API, environment file, token file, and init scripts.
+The router may appear healthy even when USB-backed `/opt` reads are stalling,
+because normal routing and Wi-Fi do not depend on those Entware files.
 
 Create a router token file and router env file outside git:
 
@@ -492,14 +499,23 @@ curl -H "Authorization: Bearer <PC_TOKEN>" http://<PC_TAILSCALE_IP>:8081/shutdow
 
 Recommended validation order:
 
-1. Confirm `/status` returns `ON`.
-2. Confirm router `/wake` wakes the PC from shutdown.
-3. Confirm local `systemctl suspend` works and wakes by keyboard/power button.
-4. Confirm `/suspend` sleeps the PC from the phone.
-5. Confirm `/wake` wakes it again from the phone.
-6. Confirm RustDesk reconnects.
-7. Confirm `/shutdown` powers it off cleanly.
-8. Confirm `/wake` powers it back on.
+1. Disable Tailscale key expiry for the unattended router and PC after both are
+   signed in and healthy.
+2. Confirm `/status` returns `ON`.
+3. Confirm at least five consecutive `tailscale ping` checks reach the router.
+4. Confirm at least five consecutive router API requests return promptly.
+5. Confirm router `/wake` wakes the PC from shutdown.
+6. Confirm local `systemctl suspend` works and wakes by keyboard/power button.
+7. Confirm `/suspend` sleeps the PC from the phone.
+8. Confirm `/wake` wakes it again from the phone.
+9. Confirm RustDesk reconnects.
+10. Confirm `/shutdown` powers it off cleanly.
+11. Confirm `/wake` powers it back on.
+
+If PC sleep works but `PC ON` times out, do not immediately change PC suspend,
+Ethernet, or UEFI settings. The failure may be between the phone and router.
+Use [Router Wake Troubleshooting](router-troubleshooting.md) to separate the
+router path from the PC WOL path.
 
 ## 10. Idle Suspend
 
