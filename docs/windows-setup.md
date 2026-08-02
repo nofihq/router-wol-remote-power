@@ -39,7 +39,7 @@ Options are:
 
 - use the optional router dispatcher described under
   [Dual-Boot Automatic Routing](ios-shortcuts.md#dual-boot-automatic-routing)
-- create Windows and Linux versions of the three PC shortcuts
+- create Windows and Linux versions of the two PC power shortcuts
 
 Do not copy Tailscale state files between the two operating systems merely to
 force them to share an identity.
@@ -167,7 +167,6 @@ In direct single-OS mode, call Windows at its configured listener:
 ```text
 PC SUSPEND: GET http://<PC_LISTEN_IP>:8081/suspend
 PC OFF:     GET http://<PC_LISTEN_IP>:8081/shutdown
-PC STATUS:  GET http://<PC_LISTEN_IP>:8081/status
 Header:     Authorization: Bearer <PC_TOKEN>
 ```
 
@@ -177,7 +176,6 @@ Windows and Linux. Do not use `<PC_LISTEN_IP>` in the phone shortcuts:
 ```text
 PC SUSPEND: GET http://<ROUTER_TAILSCALE_IP>:8080/suspend
 PC OFF:     GET http://<ROUTER_TAILSCALE_IP>:8080/shutdown
-PC STATUS:  GET http://<ROUTER_TAILSCALE_IP>:8080/status
 Header:     Authorization: Bearer <PC_TOKEN>
 ```
 

@@ -536,16 +536,14 @@ For one OS in direct mode:
 - `PC ON`: `GET http://<ROUTER_TAILSCALE_IP>:8080/wake`
 - `PC SUSPEND`: `GET http://<PC_TAILSCALE_IP>:8081/suspend`
 - `PC OFF`: `GET http://<PC_TAILSCALE_IP>:8081/shutdown`
-- optional `PC STATUS`: `GET http://<PC_TAILSCALE_IP>:8081/status`
 
 For a dual-boot PC with the optional dispatcher enabled, use `PC ON` above but
-replace the three direct PC URLs with:
+replace the two direct PC power URLs with:
 
 - `PC SUSPEND`: `GET http://<ROUTER_TAILSCALE_IP>:8080/suspend`
 - `PC OFF`: `GET http://<ROUTER_TAILSCALE_IP>:8080/shutdown`
-- `PC STATUS`: `GET http://<ROUTER_TAILSCALE_IP>:8080/status`
 
-Keep the `<PC_TOKEN>` authorization header for those three routes. `PC ON`
+Keep the `<PC_TOKEN>` authorization header for those two routes. `PC ON`
 continues to use `<ROUTER_TOKEN>`. Do not mix direct and dispatcher power URLs
 in one shortcut set.
 
@@ -555,7 +553,6 @@ Use these authorization headers:
 PC ON:      Authorization: Bearer <ROUTER_TOKEN>
 PC SUSPEND: Authorization: Bearer <PC_TOKEN>
 PC OFF:     Authorization: Bearer <PC_TOKEN>
-PC STATUS:  Authorization: Bearer <PC_TOKEN>
 ```
 
 ## 8. RustDesk Unattended Access

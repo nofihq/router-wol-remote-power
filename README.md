@@ -30,7 +30,7 @@ through RustDesk.
 | --- | --- |
 | Save power | PC can stay suspended or shut down when unused. |
 | Avoid another always-on box | The home router, which is already on, sends WOL. |
-| Easy phone control | iOS Shortcuts call `/wake`, `/suspend`, `/shutdown`, and `/status`. |
+| Easy phone control | iOS Shortcuts call `/wake`, `/suspend`, and `/shutdown`. |
 | Avoid public exposure | APIs bind to Tailscale/private IPs; no WAN port forwarding. |
 | Keep remote desktop usable | RustDesk reconnects after the PC wakes. |
 | Avoid unsafe power cuts | Linux or Windows handles a normal OS suspend/shutdown. |
@@ -120,7 +120,7 @@ Important state behavior:
 
 | PC state | Shortcut that can answer | Why |
 | --- | --- | --- |
-| On | `PC SUSPEND`, `PC OFF`, `PC STATUS` | The OS and PC API are running. |
+| On | `PC SUSPEND`, `PC OFF` | The OS and PC API are running. |
 | Asleep | `PC ON` | Only the router wake API is awake. |
 | Fully off | `PC ON` | Only the router wake API is awake. |
 
@@ -162,27 +162,17 @@ Header: Authorization: Bearer <PC_TOKEN>
 
 This talks to the PC and only works while the PC is awake.
 
-Optional direct status endpoint:
-
-```text
-Method: GET
-URL: http://<PC_TAILSCALE_IP>:8081/status
-Header: Authorization: Bearer <PC_TOKEN>
-Expected body: ON
-```
-
 ### One Shortcut Set For A Dual-Boot PC
 
 Linux and Windows normally have different Tailscale IPs. The optional router
 power dispatcher can try both PC APIs and send the request to whichever OS is
 currently running. Configure `PC_API_TARGETS` and `PC_AUTH_TOKEN_FILE` on the
-router, use the same PC token for both OS installations, then point the three
-PC shortcuts at the router:
+router, use the same PC token for both OS installations, then point the two PC
+power shortcuts at the router:
 
 ```text
 PC SUSPEND: http://<ROUTER_TAILSCALE_IP>:8080/suspend
 PC OFF:     http://<ROUTER_TAILSCALE_IP>:8080/shutdown
-PC STATUS:  http://<ROUTER_TAILSCALE_IP>:8080/status
 Header:     Authorization: Bearer <PC_TOKEN>
 ```
 
