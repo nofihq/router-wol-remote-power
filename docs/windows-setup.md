@@ -128,7 +128,7 @@ IP and allow only the router LAN address:
 Add the Windows LAN target to the router dispatcher:
 
 ```text
-PC_API_TARGETS=http://<LINUX_PC_TAILSCALE_IP>:8081,http://<WINDOWS_PC_LAN_IP>:8081
+PC_API_TARGETS=http://<LINUX_PC_REACHABLE_IP>:8081,http://<WINDOWS_PC_LAN_IP>:8081
 ```
 
 The installer starts the API immediately and also at every Windows boot. It

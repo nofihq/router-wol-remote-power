@@ -9,7 +9,10 @@ This project is designed for private tailnet use, not public internet exposure.
 - On ASUSWRT-Merlin/Tailscale userspace setups where Tailscale delivers traffic
   locally, use `ROUTER_LISTEN_IP=0.0.0.0` only with firewall rules and
   `ROUTER_ALLOWED_CLIENT_NETS` limiting sources to loopback/Tailscale networks.
-- Bind the PC API to the PC's Tailscale IP.
+- Bind the PC API to the PC's Tailscale IP when the router can reach it.
+- For router-relay mode, use a reserved PC LAN IP and a wildcard listener only
+  with `PC_ALLOWED_CLIENT_NETS` restricted to Tailnet ranges, loopback, and the
+  router's single LAN IP. The API refuses an unrestricted wildcard bind.
 - Do not forward router WAN ports to either API.
 - Use a strong random bearer token.
 - Use separate router and PC tokens if you want compromise of one endpoint to
@@ -39,7 +42,7 @@ This project is designed for private tailnet use, not public internet exposure.
 ```text
 iPhone -> Tailscale/private VPN -> router /wake
 iPhone -> Tailscale/private VPN -> PC /status /suspend /shutdown
-router -> local wired LAN -> WOL packet to PC
+router -> local wired LAN -> WOL packet or authenticated PC API request
 ```
 
 ## ASUSWRT-Merlin Firewall Ordering

@@ -215,7 +215,9 @@ sudo nano /etc/phone-wol-power/pc.env
 
 ```text
 PC_TAILSCALE_IP=<PC_TAILSCALE_IP>
+PC_LISTEN_IP=<PC_TAILSCALE_IP>
 PC_API_PORT=8081
+PC_ALLOWED_CLIENT_NETS=
 AUTH_TOKEN_FILE=/home/<LINUX_USER>/.config/phone-wol-power/token
 WIRED_IFACE=<PC_WIRED_INTERFACE>
 ```
@@ -396,13 +398,41 @@ chmod 0600 /opt/share/pc-control/.pc-token
 Add these values to `/opt/share/pc-control/router.env`:
 
 ```text
-PC_API_TARGETS=http://<LINUX_PC_TAILSCALE_IP>:8081,http://<WINDOWS_PC_TAILSCALE_IP>:8081
+PC_API_TARGETS=http://<LINUX_PC_REACHABLE_IP>:8081,http://<WINDOWS_PC_REACHABLE_IP>:8081
 PC_AUTH_TOKEN_FILE=/opt/share/pc-control/.pc-token
 PC_API_TIMEOUT_SECONDS=2
 ```
 
 The order only controls which address is tried first. Only the currently
 booted OS should answer.
+
+First test whether the router can originate ordinary TCP to each OS's
+Tailscale IP. `tailscale ping` alone is not enough:
+
+```sh
+python3 -c 'import socket; socket.create_connection(("<LINUX_PC_TAILSCALE_IP>", 8081), 3).close()'
+```
+
+Some embedded/router Tailscale packages run in userspace mode: Tailnet ping and
+incoming phone-to-router requests work, but a normal router process cannot open
+an outbound Tailnet TCP connection. On such a router, reserve one wired LAN IP
+for each OS and use LAN dispatcher targets. For Linux, keep direct phone access
+over Tailscale while allowing only the router on LAN:
+
+```text
+PC_LISTEN_IP=0.0.0.0
+PC_ALLOWED_CLIENT_NETS=127.0.0.0/8,100.64.0.0/10,<ROUTER_LAN_IP>/32
+```
+
+Then use:
+
+```text
+PC_API_TARGETS=http://<LINUX_PC_LAN_IP>:8081,http://<WINDOWS_PC_LAN_IP>:8081
+```
+
+The Linux API refuses a wildcard bind unless `PC_ALLOWED_CLIENT_NETS` is set.
+Keep bearer authentication enabled, do not forward port `8081`, and optionally
+enforce the same source restrictions in the PC firewall.
 
 If Windows does not run Tailscale, its target may instead use a reserved wired
 LAN IP, for example `http://<WINDOWS_PC_LAN_IP>:8081`. Install the Windows API

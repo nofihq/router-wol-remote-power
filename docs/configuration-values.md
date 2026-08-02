@@ -8,9 +8,12 @@ the setup guide with your own values.
 | Placeholder | What it is | How to find it | Used by |
 | --- | --- | --- | --- |
 | `<PC_TAILSCALE_IP>` | Active OS's Tailscale IPv4 address | Run `tailscale ip -4` on Linux or Windows; dual-boot installations normally have different addresses | iOS shortcuts, PC API bind address, tests |
+| `<LINUX_PC_LAN_IP>` | Linux wired LAN IPv4 address | Run `ip -4 address show` on Linux; reserve it in router DHCP | Router relay when the router cannot originate Tailnet TCP |
 | `<LINUX_PC_TAILSCALE_IP>` | Linux installation's Tailscale IPv4 address | Boot Linux and run `tailscale ip -4` | Optional router dual-boot dispatcher |
 | `<WINDOWS_PC_TAILSCALE_IP>` | Windows installation's Tailscale IPv4 address | Boot Windows and run `tailscale ip -4` | Optional router dual-boot dispatcher |
 | `<WINDOWS_PC_LAN_IP>` | Windows wired LAN IPv4 address | Run `Get-NetIPConfiguration` in Windows; reserve it in router DHCP | Optional router-relay mode |
+| `<LINUX_PC_REACHABLE_IP>` | Linux address reachable from the router | Use the Linux Tailscale IP on kernel-routed Tailnet routers, or its reserved LAN IP in router-relay mode | Router dual-boot dispatcher |
+| `<WINDOWS_PC_REACHABLE_IP>` | Windows address reachable from the router | Use the Windows Tailscale IP on kernel-routed Tailnet routers, or its reserved LAN IP in router-relay mode | Router dual-boot dispatcher |
 | `<ROUTER_TAILSCALE_IP>` | Router Tailscale/private IPv4 address | Run `tailscale ip -4` on the router | iOS wake shortcut, router API bind address |
 | `<ROUTER_LISTEN_IP>` | Router API bind address | Usually `<ROUTER_TAILSCALE_IP>`. On ASUSWRT-Merlin/Tailscale userspace setups, use `0.0.0.0` with firewall and app allowlist controls | Router wake API bind address |
 | `<ROUTER_ALLOWED_CLIENT_NETS>` | Optional client source networks for the router API | Merlin fallback example: `127.0.0.0/8,::1,100.64.0.0/10,fd7a:115c:a1e0::/48` | Router wake API app-layer source allowlist |
@@ -31,7 +34,7 @@ the setup guide with your own values.
 | Placeholder | What it is | Why it helps |
 | --- | --- | --- |
 | Reserved PC LAN IP | DHCP reservation for the PC's wired NIC | Makes LAN troubleshooting easier, though WOL uses the MAC address |
-| Shared token | One token for both APIs | Simpler, but a leak authorizes both router wake and PC power actions |
+| Shared dual-boot PC token | One PC token used by Linux, Windows, and the router dispatcher | Lets one dispatcher authenticate to whichever OS is running; keep the router wake token separate |
 
 ## Do Not Use
 

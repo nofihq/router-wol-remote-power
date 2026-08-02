@@ -74,6 +74,35 @@ If Tailscale ping is reliable but TCP port `8080` is not, check the Merlin
 loopback/firewall rule order in [Security](security.md), the wake API process,
 and the router's Tailscale version.
 
+## Check Router-To-PC Dispatcher Reachability
+
+This section applies when the router handles `/status`, `/suspend`, or
+`/shutdown` for multiple operating systems.
+
+From the router, test ordinary TCP to every configured PC target. A successful
+`tailscale ping` does not prove router programs can open Tailnet sockets:
+
+```sh
+python3 -c 'import socket; socket.create_connection(("<PC_TARGET_IP>", 8081), 3).close()'
+```
+
+If Tailnet ping works but this connection times out and `ip route get
+<PC_TAILSCALE_IP>` points toward the WAN, the router is likely using a
+userspace Tailscale integration. Do not change the PC's Ethernet or Wi-Fi
+routes. Use each OS's reserved wired LAN IP in `PC_API_TARGETS`, configure its
+PC API for router-relay mode, and restrict LAN sources to `<ROUTER_LAN_IP>/32`.
+
+Confirm the read-only status path before testing a power action:
+
+```sh
+curl -H "Authorization: Bearer <PC_TOKEN>" \
+  http://<ROUTER_TAILSCALE_IP>:8080/status
+```
+
+The router log should show which target handled `/status`. A timeout means the
+target is unreachable. HTTP `403` means the OS and router dispatcher are using
+different PC tokens.
+
 ## Check USB-Backed Entware Storage
 
 This section applies when `/opt` is stored on USB, which is common on

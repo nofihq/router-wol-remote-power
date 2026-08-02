@@ -179,6 +179,12 @@ PC STATUS:  http://<ROUTER_TAILSCALE_IP>:8080/status
 Header:     Authorization: Bearer <PC_TOKEN>
 ```
 
+Each `PC_API_TARGETS` address must be reachable by an ordinary process on the
+router. Some embedded userspace-Tailscale installs can answer Tailnet requests
+but cannot originate Tailnet TCP; use reserved PC LAN addresses plus the PC
+API's router-only source allowlist in that case. The setup and troubleshooting
+guides include a read-only reachability test.
+
 `PC ON` keeps its existing router URL and separate router token. Wake from
 sleep resumes the OS that was sleeping. Wake from a full shutdown follows the
 firmware/bootloader default; it does not choose an OS automatically.
