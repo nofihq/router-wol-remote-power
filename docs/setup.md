@@ -112,7 +112,7 @@ Use [RustDesk Notes](rustdesk.md) for the PC and iPhone setup steps.
 Clone this repository on the PC:
 
 ```bash
-git clone https://github.com/<OWNER>/router-wol-remote-power.git
+git clone https://github.com/nofihq/router-wol-remote-power.git
 cd router-wol-remote-power
 ```
 
@@ -124,11 +124,11 @@ On the PC:
 ip -o -4 addr show
 ip route show default
 ip link show
-ethtool <WIRED_IFACE> | grep -E 'Supports Wake-on|Wake-on'
+ethtool <PC_WIRED_INTERFACE> | grep -E 'Supports Wake-on|Wake-on'
 tailscale ip -4
 ```
 
-Find the Ethernet MAC from `ip link show <WIRED_IFACE>`. Use the wired MAC, not
+Find the Ethernet MAC from `ip link show <PC_WIRED_INTERFACE>`. Use the wired MAC, not
 the Wi-Fi MAC.
 
 On the router:
@@ -152,14 +152,18 @@ token for the PC API.
 Generate two values and record them privately:
 
 ```bash
+# Generate the PC token.
 openssl rand -base64 32
+# Generate the separate router token.
 openssl rand -base64 32
 ```
 
 Use the first as `<PC_TOKEN>` and the second as `<ROUTER_TOKEN>`, or label them
 the other way around before continuing. A single shared token can work for a
 personal setup, but the guide uses separate tokens because a leaked router
-token should not automatically authorize PC suspend/shutdown.
+token should not automatically authorize PC suspend/shutdown. For dual boot,
+Linux and Windows must use the same `<PC_TOKEN>` as the router dispatcher, but
+that PC token remains different from `<ROUTER_TOKEN>`.
 
 Store tokens outside git.
 
@@ -527,20 +531,23 @@ curl -H "Authorization: Bearer <ROUTER_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080
 
 Create these in Shortcuts with **Get Contents of URL**:
 
+For one OS in direct mode:
+
 - `PC ON`: `GET http://<ROUTER_TAILSCALE_IP>:8080/wake`
 - `PC SUSPEND`: `GET http://<PC_TAILSCALE_IP>:8081/suspend`
 - `PC OFF`: `GET http://<PC_TAILSCALE_IP>:8081/shutdown`
 - optional `PC STATUS`: `GET http://<PC_TAILSCALE_IP>:8081/status`
 
-For a dual-boot PC with the optional dispatcher enabled, replace the three
-direct PC URLs with:
+For a dual-boot PC with the optional dispatcher enabled, use `PC ON` above but
+replace the three direct PC URLs with:
 
 - `PC SUSPEND`: `GET http://<ROUTER_TAILSCALE_IP>:8080/suspend`
 - `PC OFF`: `GET http://<ROUTER_TAILSCALE_IP>:8080/shutdown`
 - `PC STATUS`: `GET http://<ROUTER_TAILSCALE_IP>:8080/status`
 
 Keep the `<PC_TOKEN>` authorization header for those three routes. `PC ON`
-continues to use `<ROUTER_TOKEN>`.
+continues to use `<ROUTER_TOKEN>`. Do not mix direct and dispatcher power URLs
+in one shortcut set.
 
 Use these authorization headers:
 
@@ -572,18 +579,33 @@ before opening the RustDesk session.
 
 ## 9. Test
 
-From a tailnet device:
+For one OS in direct mode, test read-only status from a tailnet device:
 
 ```bash
 curl -H "Authorization: Bearer <PC_TOKEN>" http://<PC_TAILSCALE_IP>:8081/status
 curl -H "Authorization: Bearer <ROUTER_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/wake
 ```
 
-Only test suspend and shutdown while you have a recovery path:
+For dual-boot dispatcher mode, test the full read-only forwarding path instead:
+
+```bash
+curl -H "Authorization: Bearer <PC_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/status
+curl -H "Authorization: Bearer <ROUTER_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/wake
+```
+
+Only test suspend and shutdown while you have a recovery path. Use the direct
+PC URLs for single-OS mode:
 
 ```bash
 curl -H "Authorization: Bearer <PC_TOKEN>" http://<PC_TAILSCALE_IP>:8081/suspend
 curl -H "Authorization: Bearer <PC_TOKEN>" http://<PC_TAILSCALE_IP>:8081/shutdown
+```
+
+For dual-boot dispatcher mode, use the router URLs:
+
+```bash
+curl -H "Authorization: Bearer <PC_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/suspend
+curl -H "Authorization: Bearer <PC_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/shutdown
 ```
 
 Recommended validation order:

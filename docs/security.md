@@ -19,7 +19,9 @@ This project is designed for private tailnet use, not public internet exposure.
   avoid authorizing the other endpoint.
 - Store token files outside git with mode `0600`, owned by the root-run service
   or by the non-root service user that must read the token.
-- Prefer Tailscale ACLs that allow only your phone to reach the API ports.
+- Prefer Tailscale ACLs that allow your phone to reach the API ports. If the
+  router dispatcher uses PC Tailscale targets, also allow the router to reach
+  PC port `8081`.
 - Keep sudoers entries limited to fixed root-owned helper scripts.
 - Keep `/usr/local/sbin/pc_*_with_wol` owned by root and not writable by the API
   user.
@@ -27,7 +29,8 @@ This project is designed for private tailnet use, not public internet exposure.
   Administrators. The installer applies those ACLs automatically.
 - If host or router firewalls are used, allow router `8080` from the
   Tailscale/private path and loopback when needed, then drop other sources for
-  that port. Allow PC `8081` only on the PC's Tailscale/private interface.
+  that port. In direct mode, allow PC `8081` only on its Tailscale/private
+  interface. In LAN relay mode, additionally allow only the router's LAN IP.
 - Use separate tokens for `/wake` and `/shutdown`/`/suspend` when practical.
 - If the optional dual-boot dispatcher is enabled, the router stores a copy of
   the PC token and forwards PC power requests. Keep that token file root-owned
@@ -39,10 +42,20 @@ This project is designed for private tailnet use, not public internet exposure.
 
 ## Safe Network Shape
 
+Direct single-OS mode:
+
 ```text
 iPhone -> Tailscale/private VPN -> router /wake
 iPhone -> Tailscale/private VPN -> PC /status /suspend /shutdown
-router -> local wired LAN -> WOL packet or authenticated PC API request
+router -> local wired LAN -> WOL packet
+```
+
+Dual-boot dispatcher mode:
+
+```text
+iPhone -> Tailscale/private VPN -> router /wake /status /suspend /shutdown
+router -> Tailscale or restricted LAN -> active OS API
+router -> local wired LAN -> WOL packet
 ```
 
 ## ASUSWRT-Merlin Firewall Ordering

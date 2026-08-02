@@ -21,12 +21,22 @@ packet.
 The power buttons should only be reachable through Tailscale or another private
 VPN/network path.
 
-Use this shape:
+Use this shape for one OS in direct mode:
 
 ```text
 iPhone -> Tailscale/private VPN -> router -> WOL packet to PC
 iPhone -> Tailscale/private VPN -> PC -> suspend/shutdown/status
 ```
+
+For one shortcut set across Linux and Windows, use the router dispatcher:
+
+```text
+iPhone -> Tailscale/private VPN -> router -> active OS API -> suspend/shutdown/status
+```
+
+The router may reach each OS API through kernel-routed Tailscale or a reserved
+wired LAN address with a router-only source allowlist. It still sends WOL over
+the local wired LAN.
 
 State behavior:
 
@@ -248,6 +258,7 @@ Before editing service files, collect everything in
 Most important:
 
 - PC Tailscale IP
+- reserved PC wired LAN IP for each OS when router-relay mode is needed
 - router Tailscale IP
 - PC wired Ethernet interface
 - PC wired Ethernet MAC address
@@ -267,11 +278,12 @@ Use this order:
 4. Confirm the router can send a WOL packet.
 5. Install the PC API.
 6. Install the router wake API.
-7. Add iOS Shortcuts.
-8. Add RustDesk unattended access.
-9. Disable Tailscale key expiry for the unattended router and PC.
-10. Reboot the router once and confirm Tailscale and the wake API return.
-11. Add idle suspend only after manual suspend/wake works.
+7. For dual boot, configure and test the router PC API dispatcher.
+8. Add the matching direct or dispatcher iOS Shortcuts.
+9. Add RustDesk unattended access.
+10. Disable Tailscale key expiry for the unattended router and PC.
+11. Reboot the router once and confirm Tailscale and the wake API return.
+12. Add idle suspend only after manual suspend/wake works.
 
 Then follow [End-To-End Setup](setup.md) for Linux or
 [Windows Setup](windows-setup.md) for Windows.

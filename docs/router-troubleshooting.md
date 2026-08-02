@@ -83,7 +83,7 @@ From the router, test ordinary TCP to every configured PC target. A successful
 `tailscale ping` does not prove router programs can open Tailnet sockets:
 
 ```sh
-python3 -c 'import socket; socket.create_connection(("<PC_TARGET_IP>", 8081), 3).close()'
+python3 -c 'import socket; socket.create_connection(("<PC_API_REACHABLE_IP>", 8081), 3).close()'
 ```
 
 If Tailnet ping works but this connection times out and `ip route get
@@ -127,7 +127,7 @@ program is not proof of a memory problem. Stronger evidence of a storage stall
 is:
 
 - a process stuck in `D` state
-- `/proc/<PID>/wchan` showing `sync_page`
+- `/proc/[process-id]/wchan` showing `sync_page`
 - the USB-storage worker waiting in `usb_sg_wait`
 - the in-flight I/O field in `/proc/diskstats` staying nonzero while commands
   hang

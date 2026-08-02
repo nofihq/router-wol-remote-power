@@ -109,6 +109,13 @@ flowchart LR
 
 Create three iOS Shortcuts using **Get Contents of URL**.
 
+Choose one power-routing mode before copying URLs:
+
+- **Single OS/direct:** use the direct PC URLs below.
+- **Dual boot/one shortcut set:** use `PC ON` below, then use the three router
+  dispatcher URLs under **One Shortcut Set For A Dual-Boot PC**. Do not mix the
+  direct and dispatcher URLs in one shortcut set.
+
 Important state behavior:
 
 | PC state | Shortcut that can answer | Why |
@@ -135,7 +142,7 @@ Header: Authorization: Bearer <ROUTER_TOKEN>
 
 This talks to the router because the PC may be asleep or fully off.
 
-### PC SUSPEND
+### PC SUSPEND (Single OS/Direct)
 
 ```text
 Method: GET
@@ -145,7 +152,7 @@ Header: Authorization: Bearer <PC_TOKEN>
 
 This talks to the PC and only works while the PC is awake.
 
-### PC OFF
+### PC OFF (Single OS/Direct)
 
 ```text
 Method: GET
@@ -155,7 +162,7 @@ Header: Authorization: Bearer <PC_TOKEN>
 
 This talks to the PC and only works while the PC is awake.
 
-Optional status endpoint:
+Optional direct status endpoint:
 
 ```text
 Method: GET
@@ -332,7 +339,9 @@ docs/
 - Use strong random bearer tokens.
 - Keep token files outside git and readable only by the service that needs
   them.
-- Use Tailscale ACLs if possible so only your phone can reach the power APIs.
+- Use Tailscale ACLs if possible so your phone can reach the power APIs. When
+  dispatcher targets are Tailnet addresses, also allow router-to-PC port
+  `8081`.
 - Disable Tailscale key expiry on the unattended router and PC, then remove
   those devices manually if they are retired or compromised.
 - No WAN port forwarding.

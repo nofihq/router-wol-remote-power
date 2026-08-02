@@ -95,7 +95,8 @@ tailscale ip -4
 ```
 
 Open **Windows PowerShell as Administrator** in the repository directory.
-Generate a strong token:
+
+For a new single-OS setup, generate a strong PC token:
 
 ```powershell
 $bytes = New-Object byte[] 32
@@ -106,7 +107,12 @@ $token = [Convert]::ToBase64String($bytes)
 $token
 ```
 
-Save that value somewhere private, then install:
+For a dual-boot PC using the router dispatcher, do **not** generate an
+independent Windows token. Set `$token` to the same `<PC_TOKEN>` already used
+by the Linux API and the router's `PC_AUTH_TOKEN_FILE`. Keep the router wake
+token separate.
+
+Save the PC token somewhere private, then install:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
@@ -156,12 +162,22 @@ and have confirmed local Windows sleep/resume and router WOL independently.
 
 ## 4. Use The Existing Shortcuts
 
-The routes and bearer header are unchanged:
+In direct single-OS mode, call Windows at its configured listener:
 
 ```text
 PC SUSPEND: GET http://<PC_LISTEN_IP>:8081/suspend
 PC OFF:     GET http://<PC_LISTEN_IP>:8081/shutdown
 PC STATUS:  GET http://<PC_LISTEN_IP>:8081/status
+Header:     Authorization: Bearer <PC_TOKEN>
+```
+
+For a dual-boot PC using the router dispatcher, use the same router URLs for
+Windows and Linux. Do not use `<PC_LISTEN_IP>` in the phone shortcuts:
+
+```text
+PC SUSPEND: GET http://<ROUTER_TAILSCALE_IP>:8080/suspend
+PC OFF:     GET http://<ROUTER_TAILSCALE_IP>:8080/shutdown
+PC STATUS:  GET http://<ROUTER_TAILSCALE_IP>:8080/status
 Header:     Authorization: Bearer <PC_TOKEN>
 ```
 

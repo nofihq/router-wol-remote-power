@@ -138,7 +138,7 @@ Shortcuts.
 ## Recommended Access Control
 
 By default, many tailnets allow devices to reach each other. For tighter
-security, restrict access so only your phone can call:
+security, direct single-OS mode needs:
 
 ```text
 <ROUTER_TAILSCALE_IP>:8080
@@ -153,6 +153,18 @@ syntax depends on how your tailnet is managed, so treat this as the intent:
 iPhone -> router:8080
 iPhone -> PC:8081
 ```
+
+When `PC_API_TARGETS` uses PC Tailscale addresses, dual-boot dispatcher mode
+also needs:
+
+```text
+router -> Linux PC:8081
+router -> Windows PC:8081
+```
+
+When the dispatcher uses reserved PC LAN addresses instead, Tailscale does not
+carry that router-to-PC hop. Restrict it with `PC_ALLOWED_CLIENT_NETS` on Linux
+and the router-only Windows firewall rule described in the OS setup guides.
 
 Do not allow public internet access to these ports.
 
@@ -171,6 +183,12 @@ From any device on the same tailnet, after the APIs are installed:
 ```bash
 curl -H "Authorization: Bearer <PC_TOKEN>" http://<PC_TAILSCALE_IP>:8081/status
 curl -H "Authorization: Bearer <ROUTER_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/wake
+```
+
+For dual-boot dispatcher mode, also test the read-only router status route:
+
+```bash
+curl -H "Authorization: Bearer <PC_TOKEN>" http://<ROUTER_TAILSCALE_IP>:8080/status
 ```
 
 Run more than one router test before relying on travel access:

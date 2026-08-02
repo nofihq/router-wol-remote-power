@@ -6,6 +6,7 @@ architecture:
 ```text
 phone -> private network -> router wake API -> WOL target
 phone -> private network -> awake target -> suspend/shutdown API
+phone -> private network -> optional router dispatcher -> active OS API
 ```
 
 ## Linux
@@ -44,7 +45,9 @@ driver settings. See [Windows Setup](windows-setup.md).
 
 On a dual-boot PC, Linux and Windows normally have separate Tailscale device
 identities and IPs. The router wake URL remains the same, but a phone shortcut
-must try the Tailscale address for the OS that is currently running.
+cannot know which direct OS address is active. Use the optional router
+dispatcher for one automatic shortcut set, or maintain clearly named direct
+shortcut sets for each OS.
 
 ## macOS
 

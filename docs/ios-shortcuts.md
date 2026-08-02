@@ -25,6 +25,13 @@ On a dual-boot PC, Windows and Linux usually have different Tailscale IPs. Use
 the optional router dispatcher below for one shortcut set, or create one set
 per OS. The router-based `PC ON` shortcut remains unchanged.
 
+Choose one mode before building the power shortcuts:
+
+- **Single OS/direct:** use the direct `PC SUSPEND`, `PC OFF`, and `PC STATUS`
+  sections.
+- **Dual boot/automatic:** skip those direct URLs and use the three URLs under
+  **Dual-Boot Automatic Routing**. Keep the normal `PC ON` shortcut.
+
 Supported direct interactions:
 
 - off -> on
@@ -57,7 +64,7 @@ Expected response:
 Wake packet sent
 ```
 
-## PC SUSPEND
+## PC SUSPEND (Single OS/Direct)
 
 Use this when the PC is awake and you want to keep your session state.
 
@@ -74,7 +81,7 @@ Expected response:
 Suspending...
 ```
 
-## PC OFF
+## PC OFF (Single OS/Direct)
 
 Use this when you are done for a longer period.
 
@@ -91,7 +98,7 @@ Expected response:
 Shutting down...
 ```
 
-## PC STATUS
+## PC STATUS (Single OS/Direct)
 
 Optional convenience check.
 
