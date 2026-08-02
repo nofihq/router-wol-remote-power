@@ -26,7 +26,7 @@ the setup guide with your own values.
 | `<PATH_TO_TAILSCALE>` | Router path to the Tailscale CLI | Run `command -v tailscale` on the router | Router init/service environment |
 | `<LINUX_USER>` | Linux user that runs the PC API service | Run `whoami` on the PC, or choose a dedicated service user | Linux systemd service, sudoers, token file path |
 | `<WIFI_INTERFACE>` | Linux Wi-Fi interface used only by an optional diagnosed suspend workaround | Run `ip link show`; common examples are `wlan0` and `wlp2s0` | Optional Linux systemd sleep hook configuration |
-| `<PC_TOKEN>` | Strong random bearer token for the PC API | Run `openssl rand -base64 32` | PC suspend/shutdown/status shortcuts and PC API |
+| `<PC_TOKEN>` | Strong random bearer token for the PC API | Run `openssl rand -base64 32` | PC suspend/shutdown shortcuts and PC API |
 | `<ROUTER_TOKEN>` | Strong random bearer token for the router wake API | Run `openssl rand -base64 32` | PC ON shortcut and router API |
 | `<ROUTER_SSH_USER>` | SSH username for the router | Router-specific | Copying router files |
 | `<ROUTER_LAN_IP>` | Router's LAN management IP | Router web UI or `ip route` default gateway | Copying router files |
@@ -66,7 +66,6 @@ For a dual-boot PC with one automatic shortcut set, the phone calls:
 PC ON:      http://<ROUTER_TAILSCALE_IP>:8080/wake      with <ROUTER_TOKEN>
 PC SUSPEND: http://<ROUTER_TAILSCALE_IP>:8080/suspend   with <PC_TOKEN>
 PC OFF:     http://<ROUTER_TAILSCALE_IP>:8080/shutdown  with <PC_TOKEN>
-PC STATUS:  http://<ROUTER_TAILSCALE_IP>:8080/status    with <PC_TOKEN>
 ```
 
 Do not mix direct PC power URLs and router-dispatcher power URLs unless you

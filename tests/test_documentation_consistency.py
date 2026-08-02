@@ -41,7 +41,6 @@ class DocumentationConsistencyTests(unittest.TestCase):
         expected = (
             "PC SUSPEND: http://<ROUTER_TAILSCALE_IP>:8080/suspend",
             "PC OFF:     http://<ROUTER_TAILSCALE_IP>:8080/shutdown",
-            "PC STATUS:  http://<ROUTER_TAILSCALE_IP>:8080/status",
         )
         for relative_path in (
             "README.md",
@@ -51,6 +50,7 @@ class DocumentationConsistencyTests(unittest.TestCase):
             contents = (REPOSITORY_ROOT / relative_path).read_text(encoding="utf-8")
             for line in expected:
                 self.assertIn(line, contents)
+            self.assertNotIn("PC STATUS:", contents)
 
         ios = (DOCS / "ios-shortcuts.md").read_text(encoding="utf-8")
         self.assertIn("Header:     Authorization: Bearer <PC_TOKEN>", ios)

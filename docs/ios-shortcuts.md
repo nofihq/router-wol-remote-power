@@ -8,9 +8,9 @@ The router wake API and the PC power API are different services:
 
 | PC state | What works | What times out |
 | --- | --- | --- |
-| On | `PC SUSPEND`, `PC OFF`, `PC STATUS` | Nothing, if the PC API is healthy. |
-| Asleep | `PC ON` | `PC OFF`, `PC SUSPEND`, `PC STATUS` |
-| Fully off | `PC ON` | `PC OFF`, `PC SUSPEND`, `PC STATUS` |
+| On | `PC SUSPEND`, `PC OFF` | Nothing, if the PC API is healthy. |
+| Asleep | `PC ON` | `PC OFF`, `PC SUSPEND` |
+| Fully off | `PC ON` | `PC OFF`, `PC SUSPEND` |
 
 `PC OFF` only works while the active operating system is awake because the
 shutdown endpoint runs on the PC.
@@ -27,9 +27,8 @@ per OS. The router-based `PC ON` shortcut remains unchanged.
 
 Choose one mode before building the power shortcuts:
 
-- **Single OS/direct:** use the direct `PC SUSPEND`, `PC OFF`, and `PC STATUS`
-  sections.
-- **Dual boot/automatic:** skip those direct URLs and use the three URLs under
+- **Single OS/direct:** use the direct `PC SUSPEND` and `PC OFF` sections.
+- **Dual boot/automatic:** skip those direct URLs and use the two URLs under
   **Dual-Boot Automatic Routing**. Keep the normal `PC ON` shortcut.
 
 Supported direct interactions:
@@ -38,14 +37,11 @@ Supported direct interactions:
 - sleep -> on
 - on -> sleep
 - on -> off
-- on -> status
 
 Not supported directly:
 
 - sleep -> off
 - off -> sleep
-- off -> status
-- sleep -> status
 
 ## PC ON
 
@@ -98,26 +94,6 @@ Expected response:
 Shutting down...
 ```
 
-## PC STATUS (Single OS/Direct)
-
-Optional convenience check.
-
-```text
-URL: http://<PC_TAILSCALE_IP>:8081/status
-Method: GET
-Header key: Authorization
-Header value: Bearer <PC_TOKEN>
-```
-
-Expected response:
-
-```text
-ON
-```
-
-If the request fails or times out, the PC is probably asleep, shut down, or not
-yet back on Tailscale.
-
 ## Dual-Boot Automatic Routing
 
 The router can try the Linux and Windows PC API addresses and forward to the
@@ -130,7 +106,6 @@ Then use these URLs instead of the direct PC URLs:
 ```text
 PC SUSPEND: http://<ROUTER_TAILSCALE_IP>:8080/suspend
 PC OFF:     http://<ROUTER_TAILSCALE_IP>:8080/shutdown
-PC STATUS:  http://<ROUTER_TAILSCALE_IP>:8080/status
 Header:     Authorization: Bearer <PC_TOKEN>
 ```
 

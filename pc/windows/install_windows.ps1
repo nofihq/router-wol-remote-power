@@ -128,6 +128,23 @@ $taskPrincipal = New-ScheduledTaskPrincipal `
     -LogonType ServiceAccount `
     -RunLevel Highest
 
+$existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+if ($existingTask -and $existingTask.State -eq 'Running') {
+    Stop-ScheduledTask -TaskName $taskName
+
+    for ($attempt = 0; $attempt -lt 20; $attempt++) {
+        Start-Sleep -Milliseconds 250
+        $existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+        if (-not $existingTask -or $existingTask.State -ne 'Running') {
+            break
+        }
+    }
+
+    if ($existingTask -and $existingTask.State -eq 'Running') {
+        throw "Existing $taskName instance did not stop."
+    }
+}
+
 Register-ScheduledTask `
     -TaskName $taskName `
     -Action $taskAction `
@@ -153,10 +170,34 @@ New-NetFirewallRule `
     -Profile Any | Out-Null
 
 Start-ScheduledTask -TaskName $taskName
-Start-Sleep -Seconds 2
+
+$statusUrl = "http://${PcListenIp}:$Port/status"
+$statusHeaders = @{ Authorization = "Bearer $($Token.Trim())" }
+$apiReady = $false
+for ($attempt = 0; $attempt -lt 20; $attempt++) {
+    Start-Sleep -Milliseconds 250
+    try {
+        $statusResponse = Invoke-WebRequest `
+            -UseBasicParsing `
+            -Uri $statusUrl `
+            -Headers $statusHeaders `
+            -TimeoutSec 2
+        if ([int]$statusResponse.StatusCode -eq 200 -and $statusResponse.Content -eq 'ON') {
+            $apiReady = $true
+            break
+        }
+    }
+    catch {
+        # The task may still be starting. Retry for up to five seconds.
+    }
+}
+
+if (-not $apiReady) {
+    throw "Installed API did not pass its authenticated status check at $statusUrl."
+}
 
 $taskInfo = Get-ScheduledTaskInfo -TaskName $taskName
 Write-Host "Installed and started $taskName."
-Write-Host "Status URL: http://${PcListenIp}:$Port/status"
+Write-Host "Status URL: $statusUrl"
 Write-Host "Task result: $($taskInfo.LastTaskResult) (0 or 267009 means running successfully)"
-Write-Host 'Use the same bearer token in the PC SUSPEND, PC OFF, and PC STATUS shortcuts.'
+Write-Host 'Use the same bearer token in the PC SUSPEND and PC OFF shortcuts.'
