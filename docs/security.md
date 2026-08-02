@@ -20,10 +20,19 @@ This project is designed for private tailnet use, not public internet exposure.
 - Keep sudoers entries limited to fixed root-owned helper scripts.
 - Keep `/usr/local/sbin/pc_*_with_wol` owned by root and not writable by the API
   user.
+- On Windows, keep `%ProgramData%\phone-wol-power` restricted to `SYSTEM` and
+  Administrators. The installer applies those ACLs automatically.
 - If host or router firewalls are used, allow router `8080` from the
   Tailscale/private path and loopback when needed, then drop other sources for
   that port. Allow PC `8081` only on the PC's Tailscale/private interface.
 - Use separate tokens for `/wake` and `/shutdown`/`/suspend` when practical.
+- If the optional dual-boot dispatcher is enabled, the router stores a copy of
+  the PC token and forwards PC power requests. Keep that token file root-owned
+  with mode `0600`, and keep the router itself patched and private.
+- Windows automatic sign-in is not required for the power API. If it is enabled
+  for an unattended desktop application, anyone with physical access can use
+  the signed-in session. Never put the Windows password in this repository or
+  pass it to Autologon through command-line arguments.
 
 ## Safe Network Shape
 
@@ -75,4 +84,5 @@ public internet -> router WAN port forward -> power API
 
 - This does not harden RustDesk itself.
 - This does not replace full disk encryption.
-- This does not guarantee suspend works on every Linux/NVIDIA/ACPI combination.
+- This does not guarantee suspend works on every Linux/NVIDIA/ACPI or Windows
+  firmware/driver/power-state combination.

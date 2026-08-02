@@ -1,11 +1,11 @@
 # Start Here
 
 This guide is for someone who does not already know Wake-on-LAN, router
-scripting, Tailscale, or Linux services.
+scripting, Tailscale, or OS background services.
 
 ## Goal
 
-Build phone buttons for a home Linux PC:
+Build phone buttons for a home Linux or Windows PC:
 
 - **PC ON** wakes the PC from sleep or shutdown.
 - **PC SUSPEND** puts the PC to sleep without losing the desktop session.
@@ -31,8 +31,8 @@ iPhone -> Tailscale/private VPN -> PC -> suspend/shutdown/status
 State behavior:
 
 - When the PC is on, the PC API can answer `status`, `suspend`, and `shutdown`.
-- When the PC is asleep or off, the PC API cannot answer because Linux is not
-  running.
+- When the PC is asleep or off, the PC API cannot answer because the operating
+  system is not running.
 - When the PC is asleep or off, the router wake API can still answer `wake`.
 - Direct sleep-to-off is not supported. The supported transition from sleep is
   sleep-to-on.
@@ -58,10 +58,10 @@ Before continuing:
 
 Best fit:
 
-- Desktop Linux PC.
+- Desktop Linux or Windows PC.
 - Wired Ethernet cable connected to the router/LAN.
 - Motherboard firmware supports Wake-on-LAN or PCIe wake.
-- Linux can suspend with `systemctl suspend`.
+- The active OS can suspend and resume reliably during a local test.
 - RustDesk unattended access is already working or can be configured.
 
 Poor fit:
@@ -102,7 +102,7 @@ app-specific setup steps.
 
 ## PC Firmware Settings
 
-These settings are changed in BIOS/UEFI, not inside Linux.
+These settings are changed in BIOS/UEFI, not inside Linux or Windows.
 
 General path:
 
@@ -133,7 +133,7 @@ Common setting names to disable if wake does not work:
 
 Boot setting:
 
-- Set the Linux drive first in boot order if this PC dual-boots.
+- Set the desired default OS drive first in boot order if this PC dual-boots.
 
 Separate setting:
 
@@ -186,6 +186,16 @@ systemctl suspend
 The PC should actually sleep and wake by keyboard, mouse, power button, or WOL.
 If it freezes or only blanks the screen, fix suspend before installing remote
 sleep controls.
+
+## Windows Checks
+
+Run `powercfg /a` to see the sleep states Windows and the firmware expose. In
+Device Manager, confirm the wired NIC has `Wake on Magic Packet` enabled and is
+allowed to wake the PC. Test sleep/resume locally while physically present.
+
+If Windows freezes or only blanks the screen, fix the firmware, power-state, or
+driver problem before installing remote sleep controls. Continue with
+[Windows Setup](windows-setup.md) for the Windows PC API.
 
 ## Router Checks
 
@@ -252,7 +262,7 @@ Tailscale admin/device UI.
 Use this order:
 
 1. Confirm PC firmware WOL settings.
-2. Confirm Linux can suspend locally.
+2. Confirm the active OS can suspend and resume locally.
 3. Confirm wired WOL can wake the PC locally.
 4. Confirm the router can send a WOL packet.
 5. Install the PC API.
@@ -263,4 +273,5 @@ Use this order:
 10. Reboot the router once and confirm Tailscale and the wake API return.
 11. Add idle suspend only after manual suspend/wake works.
 
-Then follow [End-To-End Setup](setup.md).
+Then follow [End-To-End Setup](setup.md) for Linux or
+[Windows Setup](windows-setup.md) for Windows.

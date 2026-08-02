@@ -39,7 +39,8 @@ Best fit:
 
 - Desktop PC with built-in wired Ethernet.
 - UEFI/BIOS exposes wake settings such as WOL, PCIe wake, or power on by PCI-E.
-- The OS can suspend cleanly through `systemctl suspend`.
+- The OS can suspend cleanly through `systemctl suspend` on Linux or its local
+  Windows sleep action.
 - The PC stays connected to the same wired LAN as the router.
 
 Usually workable with extra testing:
@@ -47,6 +48,7 @@ Usually workable with extra testing:
 - Custom-built desktops with Realtek, Intel, or similar onboard Ethernet.
 - Small form factor PCs with wired Ethernet and configurable firmware.
 - Linux distributions that use systemd but have different package paths.
+- Windows desktops whose wired NIC driver supports magic-packet wake.
 
 Poor fit:
 
@@ -78,6 +80,10 @@ Linux suspend can fail because of:
 
 Use `systemctl suspend` for real suspend. Avoid direct `/sys/power/state` unless
 you know your GPU driver supports that path.
+
+Windows sleep can fail or only blank the display because of unsupported sleep
+states, firmware, chipset/GPU/NIC drivers, or power requests. Check `powercfg
+/a` and validate sleep/resume locally before calling the remote endpoint.
 
 ## Router Compatibility
 
@@ -118,9 +124,9 @@ compatibility guide and fallback table.
 
 ## Operating Systems
 
-The checked-in PC API and helper scripts target Linux with systemd. The router
-side is OS-agnostic for the target PC because Wake-on-LAN is handled by the NIC
-and firmware, not the running OS.
+The checked-in PC APIs target Linux with systemd and Windows with PowerShell.
+The router side is OS-agnostic for the target PC because Wake-on-LAN is handled
+by the NIC and firmware, not the running OS.
 
 See [OS Support](os-support.md) for Windows, macOS, and other Linux distro
 notes.

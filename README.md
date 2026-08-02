@@ -1,8 +1,8 @@
 # Router WOL Remote Power
 
-Energy-efficient phone control for a home Linux workstation: wake it, suspend
-it, shut it down, and reconnect through RustDesk without exposing ports to the
-public internet.
+Energy-efficient phone control for a home Linux or Windows workstation: wake
+it, suspend it, shut it down, and reconnect through RustDesk without exposing
+ports to the public internet.
 
 The core idea is simple: use the router you already leave powered on as the
 Wake-on-LAN relay. Your phone talks to the router and PC over Tailscale/private
@@ -14,7 +14,7 @@ through RustDesk.
 
 - Wake a powered-off PC from an iPhone Shortcut, and wake from suspend when the
   PC firmware/NIC support it.
-- Suspend or shut down an awake Linux PC from an iPhone Shortcut.
+- Suspend or shut down an awake Linux or Windows PC from an iPhone Shortcut.
 - Keep the power controls reachable only over a private tailnet/VPN, with no
   WAN port forwards.
 - Use the router as the always-on LAN device, avoiding a Raspberry Pi/NAS just
@@ -33,12 +33,17 @@ through RustDesk.
 | Easy phone control | iOS Shortcuts call `/wake`, `/suspend`, `/shutdown`, and `/status`. |
 | Avoid public exposure | APIs bind to Tailscale/private IPs; no WAN port forwarding. |
 | Keep remote desktop usable | RustDesk reconnects after the PC wakes. |
-| Avoid unsafe power cuts | Linux handles suspend/shutdown normally through systemd. |
+| Avoid unsafe power cuts | Linux or Windows handles a normal OS suspend/shutdown. |
 
 ## Start Here
 
-If you are not already familiar with Wake-on-LAN, router firmware, Linux
-services, or Tailscale, start with [docs/start-here.md](docs/start-here.md).
+If you are not already familiar with Wake-on-LAN, router firmware, OS startup
+tasks/services, or Tailscale, start with [docs/start-here.md](docs/start-here.md).
+
+Windows users can go directly to
+[docs/windows-setup.md](docs/windows-setup.md) after checking the hardware and
+router requirements. The Windows implementation uses built-in Windows
+PowerShell and does not require Python or third-party modules.
 
 That guide explains:
 
@@ -57,8 +62,8 @@ That guide explains:
   `Authorization` header.
 - **No port forwarding:** phone access goes through Tailscale/private VPN
   instead of opening a public WAN port.
-- **Normal OS power actions:** suspend and shutdown go through Linux/systemd,
-  not a smart plug cutting power.
+- **Normal OS power actions:** suspend and shutdown go through Linux/systemd or
+  Windows power APIs, not a smart plug cutting power.
 - A router is already on in most home networks, so the wake relay does not add
   another 24/7 device.
 - Raspberry Pi, NAS, mini PC, or Home Assistant relays are fallback options
@@ -68,7 +73,7 @@ That guide explains:
 It is still hardware-dependent:
 
 - It depends on router firmware, Ethernet WOL, motherboard/UEFI settings, and
-  Linux suspend reliability.
+  OS suspend reliability.
 - Shutdown-plus-WOL is usually easier to validate than suspend-plus-WOL.
 - RustDesk unattended access is convenient but increases the importance of a
   strong password and device/account security.
@@ -87,15 +92,15 @@ flowchart LR
   tailscale["Tailscale tailnet"]
   router["Router wake API"]
   pcapi["PC Power API"]
-  pc["Linux workstation"]
+  pc["Linux or Windows workstation"]
   rustdesk["RustDesk client"]
 
   phone --> tailscale
   tailscale --> router
   tailscale --> pcapi
   router -->|"ether-wake magic packet"| pc
-  pcapi -->|"systemctl suspend"| pc
-  pcapi -->|"poweroff"| pc
+  pcapi -->|"OS suspend"| pc
+  pcapi -->|"clean shutdown"| pc
   rustdesk --> tailscale
   tailscale --> pc
 ```
@@ -108,16 +113,16 @@ Important state behavior:
 
 | PC state | Shortcut that can answer | Why |
 | --- | --- | --- |
-| On | `PC SUSPEND`, `PC OFF`, `PC STATUS` | Linux and the PC API are running. |
+| On | `PC SUSPEND`, `PC OFF`, `PC STATUS` | The OS and PC API are running. |
 | Asleep | `PC ON` | Only the router wake API is awake. |
 | Fully off | `PC ON` | Only the router wake API is awake. |
 
 `PC OFF` cannot shut down an already-sleeping PC directly because the shutdown
-API runs inside Linux. When the PC is asleep, the supported remote interaction
+API runs inside the active OS. When the PC is asleep, the supported interaction
 is wake-to-on, not sleep-to-off.
 
 If the screen goes black but the PC stays powered and cannot be woken, that is
-a failed suspend entry, not normal sleep. Fix the Linux suspend issue before
+a failed suspend entry, not normal sleep. Fix the OS/driver suspend issue before
 relying on remote sleep/wake.
 
 ### PC ON
@@ -159,6 +164,25 @@ Header: Authorization: Bearer <PC_TOKEN>
 Expected body: ON
 ```
 
+### One Shortcut Set For A Dual-Boot PC
+
+Linux and Windows normally have different Tailscale IPs. The optional router
+power dispatcher can try both PC APIs and send the request to whichever OS is
+currently running. Configure `PC_API_TARGETS` and `PC_AUTH_TOKEN_FILE` on the
+router, use the same PC token for both OS installations, then point the three
+PC shortcuts at the router:
+
+```text
+PC SUSPEND: http://<ROUTER_TAILSCALE_IP>:8080/suspend
+PC OFF:     http://<ROUTER_TAILSCALE_IP>:8080/shutdown
+PC STATUS:  http://<ROUTER_TAILSCALE_IP>:8080/status
+Header:     Authorization: Bearer <PC_TOKEN>
+```
+
+`PC ON` keeps its existing router URL and separate router token. Wake from
+sleep resumes the OS that was sleeping. Wake from a full shutdown follows the
+firmware/bootloader default; it does not choose an OS automatically.
+
 Use separate random tokens for the router wake API and the PC power API. Do not
 put tokens in query strings. Do not commit token files.
 
@@ -177,9 +201,10 @@ Required:
 
 | Area | You need | Where to configure/check |
 | --- | --- | --- |
-| PC hardware | Wired Ethernet and WOL-capable motherboard/NIC | PC BIOS/UEFI and Linux `ethtool` |
+| PC hardware | Wired Ethernet and WOL-capable motherboard/NIC | PC BIOS/UEFI and OS NIC settings |
 | PC firmware | WOL/PCIe wake enabled, ErP/deep sleep disabled if needed | BIOS/UEFI power/APM/PCIe menus |
 | Linux | systemd suspend works locally | `systemctl suspend` while physically present |
+| Windows | Windows sleep/resume works locally | Power menu and `powercfg /a` while physically present |
 | Router | Already-on home router that can send WOL and run a private service | Router web UI, SSH shell, package/startup-script support |
 | Private network | Phone can reach the router and PC privately | Tailscale or another VPN/private network |
 | Phone control | iOS Shortcuts can call private URLs with headers | Shortcuts app |
@@ -221,9 +246,9 @@ Common blockers:
 - The phone can be on Wi-Fi or cellular; it only needs Tailscale reachability to
   the router/PC tailnet IPs.
 
-The included PC service targets Linux with systemd. The architecture can be
-adapted to Windows or macOS, but those OSes need their own service and power
-helper implementation. See [docs/os-support.md](docs/os-support.md).
+The repository includes PC-side implementations for Linux/systemd and Windows.
+See [docs/os-support.md](docs/os-support.md) and
+[docs/windows-setup.md](docs/windows-setup.md).
 
 ## RustDesk Unattended Access
 
@@ -253,6 +278,10 @@ This repo's PC suspend helper reasserts Ethernet WOL and then calls:
 systemctl suspend
 ```
 
+On Windows, the PowerShell PC API calls the native Windows suspend API. Windows
+sleep-state and WOL behavior still depend on firmware, NIC settings, and
+drivers; test sleep/resume locally before enabling the phone action.
+
 ## Repository Layout
 
 ```text
@@ -261,8 +290,9 @@ pc/
   helpers/                        Root-owned helper script templates
   systemd/                        systemd service template
   sudoers.d/                      sudoers allow-list template
+  windows/                        Windows API, installer, and uninstaller
 router/
-  router_wake.py                  Router-side WOL API
+  router_wake.py                  Router-side WOL API and optional OS dispatcher
   S99wake-api.example             Entware-style init script example
 scripts/
   configure_idle_suspend.sh       GNOME 2-hour idle suspend helper
@@ -278,6 +308,7 @@ docs/
   router-support.md               Router-first compatibility and fallbacks
   router-troubleshooting.md       Router, Tailscale, API, and USB timeout checks
   tailscale.md                    Tailscale/private-network setup
+  windows-setup.md                Windows install, WOL, and troubleshooting
   rustdesk.md                     RustDesk unattended access setup
   setup.md                        End-to-end setup guide
 ```
