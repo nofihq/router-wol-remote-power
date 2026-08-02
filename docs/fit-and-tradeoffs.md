@@ -1,18 +1,18 @@
 # Fit And Tradeoffs
 
-This setup is meant for a home Linux desktop that stays on wired Ethernet and
-has a router capable of running a small private wake service and sending WOL on
-the PC's wired LAN.
+This setup is meant for a home Linux or Windows desktop that stays on wired
+Ethernet and has a router capable of running a small private wake service and
+sending WOL on the PC's wired LAN.
 
 ## Good Fit
 
-- Linux desktop or workstation at home.
+- Linux or Windows desktop/workstation at home.
 - Wired Ethernet connected to the same LAN as the router.
 - Router already stays powered on.
 - Router can run ASUSWRT-Merlin/Entware, OpenWrt, DD-WRT, pfSense/OPNsense, or
   another persistent private service.
 - The PC wakes reliably from Ethernet WOL after shutdown and suspend.
-- The PC suspends cleanly with `systemctl suspend`.
+- The PC suspends and resumes cleanly through the local OS power action.
 - The user wants phone shortcuts for wake, suspend, and shutdown.
 - RustDesk unattended access is acceptable for the remote desktop layer.
 
@@ -50,7 +50,7 @@ rules and app-layer source allowlisting. It still depends on:
 - strong bearer tokens
 - Tailscale device and ACL hygiene
 - a strong RustDesk unattended password
-- root-owned helper scripts
+- root-owned Linux helpers or SYSTEM/Administrators-only Windows files
 - no WAN port forwarding
 
 Suspend and shutdown are normal OS actions. They are safer for data integrity
@@ -62,20 +62,20 @@ encryption, or careful remote-access credential handling.
 Using sleep or clean shutdown every day is normal PC behavior. It should not
 damage a healthy desktop by itself.
 
-`systemctl suspend` is not a full reboot. The OS pauses the running session,
-keeps enough standby power for resume, and continues from the same desktop
-state when the machine wakes. Depending on firmware, this may be traditional
-suspend-to-RAM (`deep`) or a lighter idle sleep state (`s2idle`).
+Suspend is not a full reboot. The OS pauses the running session, keeps enough
+standby power for resume, and continues from the same desktop state when the
+machine wakes. Depending on OS and firmware, this may be traditional suspend-
+to-RAM, Linux `s2idle`, or Windows Modern Standby.
 
-Shutdown is different. Linux stops services, unmounts filesystems, powers off,
-and the next wake goes through firmware/UEFI and a normal Linux boot. That is
-more like starting the PC fresh.
+Shutdown is different. The OS stops services, closes storage, powers off, and
+the next wake goes through firmware/UEFI and a normal boot. That is more like
+starting the PC fresh.
 
 Daily sleep/wake or daily clean shutdown/startup is usually fine. Avoid the
 things that are actually risky:
 
 - holding the power button unless the machine is frozen
-- cutting AC power with a smart plug while Linux is running
+- cutting AC power with a smart plug while the OS is running
 - repeatedly forcing failed suspend attempts
 - relying on remote access without backups for important data
 

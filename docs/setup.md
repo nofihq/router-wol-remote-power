@@ -1,8 +1,12 @@
 # End-To-End Setup Guide
 
 This is the implementation guide. If you are not sure what Wake-on-LAN,
-Tailscale, router scripts, or Linux services are, read
+Tailscale, router scripts, or OS background services are, read
 [Start Here](start-here.md) first.
+
+This page gives the Linux/systemd installation. For Windows, follow
+[Windows Setup](windows-setup.md); the router and phone sections of this guide
+remain the same.
 
 Replace placeholder values with your own tailnet IPs, LAN interface names, MAC
 addresses, and token paths.
@@ -26,8 +30,8 @@ For Tailscale and RustDesk app setup, see:
 You will end up with:
 
 - **PC ON** iOS Shortcut -> router Tailscale IP -> router sends Ethernet WOL.
-- **PC SUSPEND** iOS Shortcut -> PC Tailscale IP -> PC runs systemd suspend.
-- **PC OFF** iOS Shortcut -> PC Tailscale IP -> PC reasserts WOL and powers off.
+- **PC SUSPEND** iOS Shortcut -> PC Tailscale IP -> PC runs an OS suspend.
+- **PC OFF** iOS Shortcut -> PC Tailscale IP -> PC shuts down cleanly.
 - RustDesk saved on the phone for desktop access after the PC wakes.
 - Optional GNOME 2-hour idle suspend.
 
@@ -83,7 +87,7 @@ RustDesk:
 - A permanent unattended password is set.
 - The phone has the PC ID/password saved outside this repository.
 
-## 2. Install PC Prerequisites
+## 2. Install Linux PC Prerequisites
 
 On Ubuntu/Debian-style systems:
 
@@ -175,7 +179,7 @@ printf "%s\n" "<ROUTER_TOKEN>" > /opt/share/pc-control/.token
 chmod 0600 /opt/share/pc-control/.token
 ```
 
-## 5. PC API
+## 5. Linux PC API
 
 In the commands below, replace `<LINUX_USER>` with the Linux account that will
 run the PC API service.
@@ -368,6 +372,44 @@ ROUTER_ALLOWED_CLIENT_NETS=127.0.0.0/8,::1,100.64.0.0/10,fd7a:115c:a1e0::/48
 
 Use the fallback only with the firewall rules below.
 
+### Optional Dual-Boot PC API Dispatcher
+
+Enable this when Linux and Windows have different Tailscale IPs and you want
+one set of phone shortcuts. Both PC API installations must use the same strong
+`<PC_TOKEN>`.
+
+Store a copy of that PC token on the router, separate from the router wake
+token:
+
+```sh
+printf "%s\n" "<PC_TOKEN>" > /opt/share/pc-control/.pc-token
+chmod 0600 /opt/share/pc-control/.pc-token
+```
+
+Add these values to `/opt/share/pc-control/router.env`:
+
+```text
+PC_API_TARGETS=http://<LINUX_PC_TAILSCALE_IP>:8081,http://<WINDOWS_PC_TAILSCALE_IP>:8081
+PC_AUTH_TOKEN_FILE=/opt/share/pc-control/.pc-token
+PC_API_TIMEOUT_SECONDS=2
+```
+
+The order only controls which address is tried first. Only the currently
+booted OS should answer.
+
+If Windows does not run Tailscale, its target may instead use a reserved wired
+LAN IP, for example `http://<WINDOWS_PC_LAN_IP>:8081`. Install the Windows API
+in router-relay mode and limit its firewall rule to `<ROUTER_LAN_IP>`.
+
+Restart the router API after changing the environment:
+
+```sh
+/opt/etc/init.d/S99wake-api restart
+```
+
+The dispatcher is optional. If `PC_API_TARGETS` is unset or empty, the router
+continues to expose only `/wake`, exactly as before.
+
 Find `<PATH_TO_ETHER_WAKE>` with:
 
 ```sh
@@ -452,6 +494,16 @@ Create these in Shortcuts with **Get Contents of URL**:
 - `PC SUSPEND`: `GET http://<PC_TAILSCALE_IP>:8081/suspend`
 - `PC OFF`: `GET http://<PC_TAILSCALE_IP>:8081/shutdown`
 - optional `PC STATUS`: `GET http://<PC_TAILSCALE_IP>:8081/status`
+
+For a dual-boot PC with the optional dispatcher enabled, replace the three
+direct PC URLs with:
+
+- `PC SUSPEND`: `GET http://<ROUTER_TAILSCALE_IP>:8080/suspend`
+- `PC OFF`: `GET http://<ROUTER_TAILSCALE_IP>:8080/shutdown`
+- `PC STATUS`: `GET http://<ROUTER_TAILSCALE_IP>:8080/status`
+
+Keep the `<PC_TOKEN>` authorization header for those three routes. `PC ON`
+continues to use `<ROUTER_TOKEN>`.
 
 Use these authorization headers:
 

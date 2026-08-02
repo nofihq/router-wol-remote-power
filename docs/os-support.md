@@ -1,6 +1,7 @@
 # OS Support
 
-This repository ships a Linux implementation of a broader architecture:
+This repository ships Linux and Windows implementations of a broader
+architecture:
 
 ```text
 phone -> private network -> router wake API -> WOL target
@@ -27,26 +28,23 @@ need different service and suspend commands.
 
 ## Windows
 
-The architecture can work, but the included PC-side scripts do not directly
-apply.
+The included `pc/windows` implementation provides the same `/status`,
+`/suspend`, and `/shutdown` routes as Linux without requiring Python. Its
+installer:
 
-What still applies:
+- stores the API and token under `%ProgramData%\phone-wol-power`
+- runs the API at boot as `SYSTEM` through Windows Task Scheduler
+- binds the API to a chosen Windows Tailscale or LAN IPv4 address
+- limits the inbound firewall rule to Tailscale peers or only the router relay
+- uses the native Windows suspend API and `shutdown.exe /s /t 0`
 
-- router-side WOL
-- Tailscale private reachability
-- iOS Shortcuts calling private HTTP endpoints
-- RustDesk unattended access
+Sleep support still depends on power policy, Modern Standby/S3 support,
+firmware, and drivers. WOL must also be enabled in the wired NIC's Windows
+driver settings. See [Windows Setup](windows-setup.md).
 
-What must change:
-
-- install the PC API as a Windows service
-- replace Linux helpers with Windows sleep/shutdown commands
-- configure Windows power settings and NIC WOL settings
-- allow only the tailnet/private interface through Windows Firewall
-
-Windows shutdown can be handled with commands such as `shutdown /s /t 0`.
-Sleep support depends on power policy, Modern Standby/S3 support, drivers, and
-the service account used to trigger sleep.
+On a dual-boot PC, Linux and Windows normally have separate Tailscale device
+identities and IPs. The router wake URL remains the same, but a phone shortcut
+must try the Tailscale address for the OS that is currently running.
 
 ## macOS
 

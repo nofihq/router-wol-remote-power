@@ -4,9 +4,12 @@ import hmac
 import ipaddress
 import logging
 import os
+import socket
 import socketserver
 import subprocess
+import urllib.error
 import urllib.parse
+import urllib.request
 
 
 LISTEN_IP = os.environ.get(
@@ -18,12 +21,62 @@ WOL_INTERFACE = os.environ.get("WOL_LAN_INTERFACE", "br0")
 WOL_TARGET_MAC = os.environ["WOL_TARGET_MAC"]
 ETHER_WAKE = os.environ.get("ETHER_WAKE", "/usr/sbin/ether-wake")
 ALLOWED_CLIENT_NETS = os.environ.get("ROUTER_ALLOWED_CLIENT_NETS", "")
+PC_API_TARGETS_VALUE = os.environ.get("PC_API_TARGETS", "")
+PC_AUTH_TOKEN_FILE = os.environ.get("PC_AUTH_TOKEN_FILE", "")
+PC_API_TIMEOUT_SECONDS = float(os.environ.get("PC_API_TIMEOUT_SECONDS", "2"))
 
-with open(TOKEN_FILE, encoding="utf-8") as f:
-    TOKEN = f.read().strip()
 
-if len(TOKEN) < 20:
-    raise SystemExit("Refusing to start with a short bearer token")
+def _read_token(path, label):
+    with open(path, encoding="utf-8") as token_file:
+        token = token_file.read().strip()
+    if len(token) < 20:
+        raise SystemExit("Refusing to start with a short {} bearer token".format(label))
+    return token
+
+
+def _parse_pc_api_targets(value):
+    targets = []
+    for item in value.split(","):
+        target = item.strip().rstrip("/")
+        if not target:
+            continue
+        parsed = urllib.parse.urlsplit(target)
+        try:
+            port = parsed.port
+        except ValueError:
+            port = None
+        if (
+            parsed.scheme != "http"
+            or not parsed.hostname
+            or port is None
+            or parsed.username
+            or parsed.password
+            or parsed.path not in ("", "/")
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise SystemExit(
+                "Invalid PC_API_TARGETS entry (expected http://host:port): {}".format(
+                    item.strip()
+                )
+            )
+        if target not in targets:
+            targets.append(target)
+    return targets
+
+
+TOKEN = _read_token(TOKEN_FILE, "router")
+PC_API_TARGETS = _parse_pc_api_targets(PC_API_TARGETS_VALUE)
+
+if not 0.2 <= PC_API_TIMEOUT_SECONDS <= 10:
+    raise SystemExit("PC_API_TIMEOUT_SECONDS must be between 0.2 and 10")
+
+if PC_API_TARGETS:
+    if not PC_AUTH_TOKEN_FILE:
+        raise SystemExit("Set PC_AUTH_TOKEN_FILE when PC_API_TARGETS is configured")
+    PC_TOKEN = _read_token(PC_AUTH_TOKEN_FILE, "PC")
+else:
+    PC_TOKEN = None
 
 
 def _parse_allowed_networks(value):
@@ -39,6 +92,38 @@ def _parse_allowed_networks(value):
 ALLOWED_NETWORKS = _parse_allowed_networks(ALLOWED_CLIENT_NETS)
 
 
+def _proxy_to_active_pc(path):
+    for target in PC_API_TARGETS:
+        url = target + path
+        request = urllib.request.Request(
+            url,
+            headers={"Authorization": "Bearer {}".format(PC_TOKEN)},
+            method="GET",
+        )
+        try:
+            with urllib.request.urlopen(
+                request, timeout=PC_API_TIMEOUT_SECONDS
+            ) as response:
+                body = response.read(4096).decode("utf-8", errors="replace")
+                if response.status == 200:
+                    logging.info("%s handled by %s", path, target)
+                    return 200, body
+                logging.warning(
+                    "PC API %s returned HTTP %s for %s",
+                    target,
+                    response.status,
+                    path,
+                )
+        except urllib.error.HTTPError as exc:
+            logging.warning("PC API %s returned HTTP %s for %s", target, exc.code, path)
+            if exc.code == 403:
+                return 502, "Active PC API rejected the configured token"
+        except (urllib.error.URLError, TimeoutError, socket.timeout, OSError) as exc:
+            logging.info("PC API %s unavailable for %s: %s", target, path, exc)
+
+    return 503, "No active PC OS API found"
+
+
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         path = urllib.parse.urlparse(self.path).path
@@ -47,12 +132,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._respond(403, "Forbidden")
             return
 
-        auth = self.headers.get("Authorization", "")
-        if not hmac.compare_digest(auth, f"Bearer {TOKEN}"):
-            self._respond(403, "Forbidden")
-            return
-
         if path == "/wake":
+            auth = self.headers.get("Authorization", "")
+            if not hmac.compare_digest(auth, f"Bearer {TOKEN}"):
+                self._respond(403, "Forbidden")
+                return
             logging.info("wake authorized")
             try:
                 subprocess.run(
@@ -64,6 +148,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._respond(500, "Wake command failed")
             else:
                 self._respond(200, "Wake packet sent")
+        elif path in ("/status", "/suspend", "/shutdown") and PC_API_TARGETS:
+            auth = self.headers.get("Authorization", "")
+            if not hmac.compare_digest(auth, f"Bearer {PC_TOKEN}"):
+                self._respond(403, "Forbidden")
+                return
+            logging.info("%s authorized for OS auto-detection", path)
+            code, message = _proxy_to_active_pc(path)
+            self._respond(code, message)
         else:
             self._respond(404, "Not Found")
 
@@ -100,5 +192,9 @@ if __name__ == "__main__":
             logging.info(
                 "Router wake API allowed client networks: %s",
                 ", ".join(str(network) for network in ALLOWED_NETWORKS),
+            )
+        if PC_API_TARGETS:
+            logging.info(
+                "Router PC API auto-detection targets: %s", ", ".join(PC_API_TARGETS)
             )
         httpd.serve_forever()
