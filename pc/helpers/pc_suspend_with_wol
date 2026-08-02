@@ -3,8 +3,7 @@ set -eu
 
 CONFIG_FILE="${PHONE_WOL_POWER_ENV:-/etc/phone-wol-power/pc.env}"
 WIRED_IFACE="${WIRED_IFACE:-}"
-SUSPEND_PRE_DOWN_IFACE="${SUSPEND_PRE_DOWN_IFACE:-}"
-SUSPEND_PRE_UNLOAD_MODULES="${SUSPEND_PRE_UNLOAD_MODULES:-}"
+SUSPEND_REQUIRE_LOADED_MODULES="${SUSPEND_REQUIRE_LOADED_MODULES:-}"
 
 config_value() {
   key="$1"
@@ -12,8 +11,7 @@ config_value() {
 }
 
 [ -n "$WIRED_IFACE" ] || WIRED_IFACE="$(config_value WIRED_IFACE)"
-[ -n "$SUSPEND_PRE_DOWN_IFACE" ] || SUSPEND_PRE_DOWN_IFACE="$(config_value SUSPEND_PRE_DOWN_IFACE)"
-[ -n "$SUSPEND_PRE_UNLOAD_MODULES" ] || SUSPEND_PRE_UNLOAD_MODULES="$(config_value SUSPEND_PRE_UNLOAD_MODULES)"
+[ -n "$SUSPEND_REQUIRE_LOADED_MODULES" ] || SUSPEND_REQUIRE_LOADED_MODULES="$(config_value SUSPEND_REQUIRE_LOADED_MODULES)"
 
 if [ -z "$WIRED_IFACE" ]; then
   echo "Set WIRED_IFACE in $CONFIG_FILE or the environment." >&2
@@ -27,54 +25,23 @@ case "$WIRED_IFACE" in
     ;;
 esac
 
-if [ -n "$SUSPEND_PRE_DOWN_IFACE" ]; then
-  case "$SUSPEND_PRE_DOWN_IFACE" in
-    *[!A-Za-z0-9_.:-]*)
-      echo "Invalid SUSPEND_PRE_DOWN_IFACE: $SUSPEND_PRE_DOWN_IFACE" >&2
-      exit 2
-      ;;
-  esac
-fi
-
-for module in $SUSPEND_PRE_UNLOAD_MODULES; do
+for module in $SUSPEND_REQUIRE_LOADED_MODULES; do
   case "$module" in
     *[!A-Za-z0-9_]*|"")
-      echo "Invalid module in SUSPEND_PRE_UNLOAD_MODULES: $module" >&2
+      echo "Invalid module in SUSPEND_REQUIRE_LOADED_MODULES: $module" >&2
       exit 2
       ;;
   esac
+  if ! /sbin/lsmod | /usr/bin/grep -q "^${module}[[:space:]]"; then
+    echo "Required suspend module is not loaded: $module" >&2
+    /usr/bin/logger -t phone-wol-power "Refusing suspend because required module ${module} is not loaded"
+    exit 1
+  fi
 done
 
 /usr/bin/logger -t phone-wol-power "Reasserting ${WIRED_IFACE} Wake-on-LAN before suspend"
 /usr/sbin/ethtool -s "$WIRED_IFACE" wol g
 
-if [ -n "$SUSPEND_PRE_DOWN_IFACE" ]; then
-  /usr/bin/logger -t phone-wol-power "Taking ${SUSPEND_PRE_DOWN_IFACE} down before suspend"
-  /sbin/ip link set "$SUSPEND_PRE_DOWN_IFACE" down 2>/dev/null || true
-fi
-
-for module in $SUSPEND_PRE_UNLOAD_MODULES; do
-  if /sbin/lsmod | /usr/bin/grep -q "^${module}[[:space:]]"; then
-    /usr/bin/logger -t phone-wol-power "Unloading ${module} before suspend"
-    if ! /sbin/modprobe -r "$module"; then
-      /usr/bin/logger -t phone-wol-power "Failed to unload ${module}; refusing suspend"
-      exit 1
-    fi
-  fi
-done
-
-set +e
-/usr/bin/systemctl suspend
-rc=$?
-set -e
-
-for module in $SUSPEND_PRE_UNLOAD_MODULES; do
-  /usr/bin/logger -t phone-wol-power "Reloading ${module} after suspend returns"
-  /sbin/modprobe "$module" 2>/dev/null || true
-done
-
-if [ -n "$SUSPEND_PRE_DOWN_IFACE" ]; then
-  /sbin/ip link set "$SUSPEND_PRE_DOWN_IFACE" up 2>/dev/null || true
-fi
-
-exit "$rc"
+# Driver unload/reload belongs in the systemd pre/post hook. systemctl may
+# return before sleep begins, so doing post-resume work here creates a race.
+exec /usr/bin/systemctl suspend

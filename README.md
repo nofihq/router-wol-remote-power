@@ -278,6 +278,10 @@ This repo's PC suspend helper reasserts Ethernet WOL and then calls:
 systemctl suspend
 ```
 
+Optional driver unload/reload work runs in a systemd pre/post sleep hook, not
+around the `systemctl` command. NVIDIA users should verify `modinfo nvidia` and
+`nvidia-smi` after kernel upgrades before relying on suspend remotely.
+
 On Windows, the PowerShell PC API calls the native Windows suspend API. Windows
 sleep-state and WOL behavior still depend on firmware, NIC settings, and
 drivers; test sleep/resume locally before enabling the phone action.
@@ -287,7 +291,7 @@ drivers; test sleep/resume locally before enabling the phone action.
 ```text
 pc/
   pc_power_api.py                 PC-side shutdown/status/suspend API
-  helpers/                        Root-owned helper script templates
+  helpers/                        Root-owned power helpers and sleep hook
   systemd/                        systemd service template
   sudoers.d/                      sudoers allow-list template
   windows/                        Windows API, installer, and uninstaller

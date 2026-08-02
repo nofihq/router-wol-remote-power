@@ -54,6 +54,8 @@ PC:
 - Boot order returns to the OS that runs the PC API.
 - Linux can suspend through `systemctl suspend`.
 - NVIDIA users should enable/use NVIDIA's systemd suspend services.
+- NVIDIA users should confirm `modinfo nvidia` and `nvidia-smi` work under the
+  currently running kernel before testing suspend.
 
 Common PC firmware setting names:
 
@@ -189,6 +191,7 @@ Install helper scripts as root-owned files:
 ```bash
 sudo install -o root -g root -m 0755 pc/helpers/pc_poweroff_with_wol /usr/local/sbin/pc_poweroff_with_wol
 sudo install -o root -g root -m 0755 pc/helpers/pc_suspend_with_wol /usr/local/sbin/pc_suspend_with_wol
+sudo install -o root -g root -m 0755 pc/helpers/phone-wol-power-system-sleep /usr/lib/systemd/system-sleep/phone-wol-power
 ```
 
 Install sudoers rules:
@@ -220,13 +223,17 @@ WIRED_IFACE=<PC_WIRED_INTERFACE>
 Optional suspend workaround values:
 
 ```text
+SUSPEND_REQUIRE_LOADED_MODULES=nvidia
 SUSPEND_PRE_DOWN_IFACE=<WIFI_INTERFACE>
 SUSPEND_PRE_UNLOAD_MODULES=iwlwifi
 ```
 
-Do not add those optional values unless suspend hangs and you have already
-confirmed that Ethernet is the primary route. They are for systems where a
-specific driver, commonly Intel `iwlwifi`, blocks clean suspend.
+Set `SUSPEND_REQUIRE_LOADED_MODULES=nvidia` on a PC whose display depends on
+NVIDIA. It makes both API and local systemd sleep refuse to continue when the
+driver is missing after a kernel update. Do not add the interface/module
+workaround values unless suspend hangs and you have already confirmed that
+Ethernet is the primary route. They are for systems where a specific driver,
+commonly Intel `iwlwifi`, blocks clean suspend.
 
 Keep this file root-owned and not writable by the API user:
 

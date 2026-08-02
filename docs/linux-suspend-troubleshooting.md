@@ -21,6 +21,30 @@ If `systemctl suspend` works and direct commands such as `rtcwake -m mem` do
 not, prefer the systemd path. GPU drivers, especially NVIDIA, may need
 systemd-managed suspend/resume hooks.
 
+For NVIDIA systems, verify that the running kernel has a matching driver before
+every first suspend test after a kernel upgrade:
+
+```bash
+uname -r
+modinfo nvidia
+nvidia-smi
+lspci -nnk | grep -A4 -i 'vga\|3d controller'
+```
+
+If `modinfo` reports that `nvidia` is missing for the running kernel, do not
+suspend yet. Install the matching kernel module with the distribution's driver
+tool, then reboot. On Ubuntu, start with:
+
+```bash
+sudo ubuntu-drivers install
+```
+
+The exact package name and NVIDIA branch vary by Ubuntu release and GPU. A
+kernel can boot using a fallback renderer even though its NVIDIA module is
+missing; in that state suspend may resume to a powered-on black screen. Add
+`SUSPEND_REQUIRE_LOADED_MODULES=nvidia` to `pc.env` after the NVIDIA driver is
+working so the installed helper and sleep hook reject that unsafe state.
+
 ## Wake-on-LAN Checks
 
 Confirm the wired NIC supports and has enabled magic-packet wake:
@@ -142,8 +166,8 @@ If the hook works when run manually but never logs during real suspend, install
 the hook in the directory printed by that command. Test the `pre` and `post`
 paths manually before trying another real suspend.
 
-If the hook does not log during a real suspend attempt, put the workaround in
-the suspend helper instead. The repo helper supports this through
+The repository installer deploys `pc/helpers/phone-wol-power-system-sleep` to
+`/usr/lib/systemd/system-sleep/phone-wol-power`. Configure that hook through
 `/etc/phone-wol-power/pc.env`:
 
 ```text
@@ -151,11 +175,11 @@ SUSPEND_PRE_DOWN_IFACE=<WIFI_INTERFACE>
 SUSPEND_PRE_UNLOAD_MODULES=iwlwifi
 ```
 
-With those values set, `/usr/local/sbin/pc_suspend_with_wol` brings the Wi-Fi
-interface down, unloads `iwlwifi`, and only then calls `systemctl suspend`. If
-module unload fails, it refuses suspend instead of continuing into a likely
-black-screen hang. After resume, it reloads the module and brings the interface
-back up.
+With those values set, the systemd hook brings the Wi-Fi interface down and
+unloads `iwlwifi` during systemd's real pre-sleep phase. It reloads the module
+and restores the interface during the post-resume phase. Do not duplicate this
+work inside the command that calls `systemctl suspend`: systemctl can return
+before sleep begins, causing an early reload to race the pre-sleep hook.
 
 ## Safe Isolation Order
 
